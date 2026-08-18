@@ -1,7 +1,7 @@
 # Lume
 
 [![CI](https://github.com/Ultra332/Lume/actions/workflows/ci.yml/badge.svg)](https://github.com/Ultra332/Lume/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/Ultra332/Lume?label=release)](https://github.com/Ultra332/Lume/releases)
+[![Release](https://img.shields.io/github/v/release/Ultra332/Lume?label=release)]([https://github.com/Ultra332/Lume/releases](https://github.com/Ultra332/Lume/releases/tag/v0.1.0))
 [![License](https://img.shields.io/github/license/Ultra332/Lume)](LICENSE)
 [![C11](https://img.shields.io/badge/C-11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
 
