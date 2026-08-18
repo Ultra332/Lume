@@ -1,5 +1,10 @@
 # Lume
 
+[![CI](https://github.com/Ultra332/Lume/actions/workflows/ci.yml/badge.svg)](https://github.com/Ultra332/Lume/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Ultra332/Lume?label=release)](https://github.com/Ultra332/Lume/releases)
+[![License](https://img.shields.io/github/license/Ultra332/Lume)](LICENSE)
+[![C11](https://img.shields.io/badge/C-11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
+
 Lume é uma linguagem de programação educacional em português, pequena o bastante para ser estudada e completa o bastante para ensinar programas reais. A implementação de referência é escrita em C11 e inclui interpretador, REPL, análise estática, módulos, projetos reproduzíveis e uma biblioteca padrão organizada.
 
 > Estado: **v0.1.0 candidata à primeira release pública**. A linguagem é utilizável, mas ainda está em evolução e pode receber mudanças incompatíveis antes da versão 1.0.
