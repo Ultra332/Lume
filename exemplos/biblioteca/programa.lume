@@ -1,0 +1,8 @@
+importe "lume/matematica"
+importe "lume/texto"
+
+variavel numero = matematica.raiz(81)
+variavel mensagem = texto.maiusculo("lume")
+
+escreva(numero)
+escreva(mensagem)

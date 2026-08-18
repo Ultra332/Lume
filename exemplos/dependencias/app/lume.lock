@@ -1,0 +1,6 @@
+lock_version = 1
+
+[[dependencia]]
+nome = "matematica"
+versao = "0.1.0"
+caminho = "exemplos/dependencias/matematica"

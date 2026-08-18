@@ -1,0 +1,4 @@
+nome = "a"
+versao = "1.0.0"
+entrada = "src/principal.lume"
+dependencia.b = "../transitive_b"

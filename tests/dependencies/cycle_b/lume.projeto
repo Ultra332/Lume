@@ -1,0 +1,4 @@
+nome = "cycle_b"
+versao = "2.0.0"
+entrada = "src/principal.lume"
+dependencia.cycle_a = "../cycle_a"

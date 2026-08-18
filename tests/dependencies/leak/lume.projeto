@@ -1,0 +1,4 @@
+nome = "leak"
+versao = "1.0.0"
+entrada = "src/principal.lume"
+dependencia.a = "../transitive_a"

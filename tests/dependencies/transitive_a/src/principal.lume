@@ -1,0 +1,2 @@
+importe "b"
+exporte constante resultado = b.valor + 1

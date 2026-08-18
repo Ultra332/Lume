@@ -1,0 +1,6 @@
+variavel contador = 0
+
+exporte funcao proximo() {
+    contador = contador + 1
+    retorne contador
+}

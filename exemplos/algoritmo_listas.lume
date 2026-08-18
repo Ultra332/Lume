@@ -1,0 +1,11 @@
+funcao maior(numeros) {
+    variavel atual = numeros[0]
+    para i de 1 ate tamanho(numeros) - 1 {
+        se numeros[i] > atual {
+            atual = numeros[i]
+        }
+    }
+    retorne atual
+}
+variavel numeros = [7, 2, 19, 4]
+escreva(maior(numeros))

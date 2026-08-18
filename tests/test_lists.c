@@ -1,0 +1,21 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "interpreter.h"
+#include "lexer.h"
+#include "parser.h"
+static int failures=0;
+#define CHECK(c) do{if(!(c)){fprintf(stderr,"FALHA %s:%d: %s\n",__FILE__,__LINE__,#c);failures++;}}while(0)
+typedef struct{Source source;TokenArray tokens;ErrorList errors;Program *program;Environment environment;FILE *output;bool ok;}Run;
+static Run run_text(const char *text){Run r;RuntimeIO io;source_init(&r.source);token_array_init(&r.tokens);error_list_init(&r.errors);r.program=NULL;environment_init(&r.environment,NULL);r.output=tmpfile();r.ok=source_from_bytes(&r.source,"listas.lume",text,strlen(text));if(r.ok)r.ok=lexer_scan(&r.source,&r.tokens,&r.errors);if(r.ok)r.ok=parser_parse_program(&r.tokens,&r.program,&r.errors);io.input=stdin;io.output=r.output;if(r.ok)r.ok=interpreter_execute_program_with_io(r.program,&r.environment,&io,&r.errors);return r;}
+static void run_free(Run *r){fclose(r->output);environment_free(&r->environment);program_free(r->program);error_list_free(&r->errors);token_array_free(&r->tokens);source_free(&r->source);}
+static bool get_int(Run *r,const char *name,int64_t expected){SourceSpan span={{0U,1U,1U},{0U,1U,1U}};Value v=value_null();bool ok=environment_get(&r->environment,name,strlen(name),&v,span,&r->errors);ok=ok&&v.type==VALUE_INTEGER&&v.as.integer==expected;value_free(&v);return ok;}
+static void expect_int(const char *code,const char *name,int64_t expected){Run r=run_text(code);if(!r.ok&&r.errors.count)fprintf(stderr,"%s\n",r.errors.data[0].message);CHECK(r.ok);CHECK(get_int(&r,name,expected));run_free(&r);}
+static void expect_error(const char *code,LumeErrorKind kind){Run r=run_text(code);CHECK(!r.ok);CHECK(r.errors.count==1U);if(r.errors.count)CHECK(r.errors.data[0].kind==kind);run_free(&r);}
+static void test_literals_and_index(void){expect_int("variavel r=[10,20,30][0]\n","r",10);expect_int("variavel r=[[1,2],[3,4]][1][0]\n","r",3);expect_int("variavel r=tamanho([])\n","r",0);expect_int("variavel r=tamanho([1,2,3])\n","r",3);expect_int("variavel r=tamanho(\"Joao\")\n","r",4);expect_int("variavel r=tamanho(\"Jo\xC3\xA3o\")\n","r",4);}
+static void test_mutation_and_reference(void){expect_int("variavel a=[1,2]\nvariavel b=a\nb[0]=10\nvariavel r=a[0]\n","r",10);expect_int("variavel a=[1,2,3]\na[1]=20\nvariavel r=a[1]\n","r",20);expect_int("variavel a=[]\npara i de 0 ate 20 { adicione(a,i) }\nvariavel r=a[20]\n","r",20);}
+static void test_remove(void){expect_int("variavel a=[10,20,30]\nvariavel x=remova(a,1)\nvariavel r=x+a[1]\n","r",50);expect_int("variavel a=[7]\nvariavel r=remova(a,0)\n","r",7);}
+static void test_functions_and_closures(void){expect_int("funcao criar(){retorne [1,2,3]}\nvariavel a=criar()\nvariavel r=a[2]\n","r",3);expect_int("funcao dobro(x){retorne x*2}\nvariavel fs=[dobro]\nvariavel r=fs[0](5)\n","r",10);expect_int("funcao criar(){variavel d=[];funcao add(x){adicione(d,x);retorne d};retorne add}\nvariavel f=criar()\nf(3)\nvariavel r=f(4)[1]\n","r",4);}
+static void test_equality_and_errors(void){Run r=run_text("variavel a=[1]\nvariavel b=a\nvariavel x=0\nse a==b{x=1}\nvariavel y=0\nse [1]==[1]{y=1}\n");CHECK(r.ok);CHECK(get_int(&r,"x",1));CHECK(get_int(&r,"y",0));run_free(&r);expect_error("[][0]\n",LUME_ERROR_INDEX);expect_error("[1][-1]\n",LUME_ERROR_INDEX);expect_error("[1][1]\n",LUME_ERROR_INDEX);expect_error("[1][1.5]\n",LUME_ERROR_INDEX);expect_error("10[0]\n",LUME_ERROR_INDEX);expect_error("variavel a=[]\nadicione(a,a)\n",LUME_ERROR_RUNTIME);expect_error("variavel a=[nulo]\na[0]=a\n",LUME_ERROR_RUNTIME);}
+static void test_formatter(void){Run r=run_text("funcao f(){retorne nulo}\nescreva([1,2.5,verdadeiro,nulo,\"Ana\",f,[3]])\n");char buffer[256]={0};size_t n;CHECK(r.ok);rewind(r.output);n=fread(buffer,1U,sizeof(buffer)-1U,r.output);buffer[n]='\0';CHECK(strstr(buffer,"[1, 2.5, verdadeiro, nulo, \"Ana\", <funcao f>, [3]]")!=NULL);run_free(&r);}
+int main(void){test_literals_and_index();test_mutation_and_reference();test_remove();test_functions_and_closures();test_equality_and_errors();test_formatter();if(failures==0){puts("Todos os testes de listas passaram.");return 0;}fprintf(stderr,"%d teste(s) falharam.\n",failures);return 1;}

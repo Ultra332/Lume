@@ -1,0 +1,13 @@
+// Execute com: lume exemplos/condicional.lume
+variavel idade = 18
+variavel categoria = ""
+
+se idade >= 18 {
+    categoria = "adulto"
+} senao se idade >= 12 {
+    categoria = "adolescente"
+} senao {
+    categoria = "crianca"
+}
+
+escreva(categoria)

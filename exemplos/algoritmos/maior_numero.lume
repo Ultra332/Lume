@@ -1,0 +1,7 @@
+variavel numeros = [4, 9, 2, 7]
+variavel maior = numeros[0]
+para i de 1 ate tamanho(numeros) - 1 {
+    se numeros[i] > maior { maior = numeros[i] }
+}
+escreva(maior)
+

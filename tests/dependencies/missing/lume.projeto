@@ -1,0 +1,4 @@
+nome = "missing"
+versao = "1.0.0"
+entrada = "src/principal.lume"
+dependencia.ausente = "../nao_existe"

@@ -1,0 +1,4 @@
+nome = "a"
+nome = "b"
+versao = "0.1.0"
+entrada = "src/principal.lume"

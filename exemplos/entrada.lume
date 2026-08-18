@@ -1,0 +1,9 @@
+escreva("Digite sua idade:")
+variavel entrada = leia()
+variavel idade = inteiro(entrada)
+
+se idade >= 18 {
+    escreva("Maior de idade")
+} senao {
+    escreva("Menor de idade")
+}

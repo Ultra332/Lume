@@ -1,0 +1,4 @@
+nome = "app_local"
+versao = "1.0.0"
+entrada = "src/principal.lume"
+dependencia.matematica = "../matematica"

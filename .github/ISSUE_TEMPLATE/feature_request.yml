@@ -1,0 +1,23 @@
+name: Propor uma melhoria
+description: Sugira uma melhoria com motivação educacional.
+title: "[Proposta]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema
+      description: Que dificuldade concreta esta proposta resolve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta e exemplo
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas e impacto educacional
+

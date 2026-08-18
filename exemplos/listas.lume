@@ -1,0 +1,5 @@
+variavel numeros = [10, 20, 30]
+adicione(numeros, 40)
+para i de 0 ate tamanho(numeros) - 1 {
+    escreva(numeros[i])
+}

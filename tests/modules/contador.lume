@@ -1,0 +1,3 @@
+escreva("contador carregado")
+variavel valor = 0
+exporte funcao proximo() { valor = valor + 1; retorne valor }

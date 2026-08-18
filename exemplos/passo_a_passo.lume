@@ -1,0 +1,9 @@
+variavel total = 0
+
+para numero de 1 ate 3 {
+    total = total + numero
+}
+
+se total == 6 {
+    escreva("A soma foi calculada corretamente")
+}

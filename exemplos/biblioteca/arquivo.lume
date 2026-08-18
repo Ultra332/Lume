@@ -1,0 +1,4 @@
+importe "lume/arquivo"
+arquivo.escreva("exemplo-stdlib.txt", "Olá")
+escreva(arquivo.leia("exemplo-stdlib.txt"))
+arquivo.remova("exemplo-stdlib.txt")

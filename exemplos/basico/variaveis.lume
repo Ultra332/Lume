@@ -1,0 +1,5 @@
+constante CURSO = "Lume"
+variavel aula = 1
+aula = aula + 1
+escreva(CURSO)
+escreva(aula)

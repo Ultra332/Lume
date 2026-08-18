@@ -1,0 +1,14 @@
+funcao criar_contador() {
+    variavel valor = 0
+
+    funcao proximo() {
+        valor = valor + 1
+        retorne valor
+    }
+
+    retorne proximo
+}
+
+variavel contador = criar_contador()
+escreva(contador())
+escreva(contador())

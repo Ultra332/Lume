@@ -1,0 +1,2 @@
+importe "../matematica"
+exporte funcao calcular() { retorne matematica.somar(2, 3) }

@@ -1,0 +1,17 @@
+// Execute com: lume exemplos/funcoes.lume
+funcao dobro(numero) {
+    retorne numero * 2
+}
+
+escreva(dobro(10))
+
+funcao criar_somador(base) {
+    funcao somar(valor) {
+        retorne base + valor
+    }
+
+    retorne somar
+}
+
+variavel somar_dez = criar_somador(10)
+escreva(somar_dez(5))

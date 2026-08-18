@@ -1,0 +1,19 @@
+#include <stdio.h>
+#include <string.h>
+#include "analyzer.h"
+#include "cli.h"
+#include "lexer.h"
+#include "parser.h"
+static int failures=0;
+#define CHECK(c) do{if(!(c)){fprintf(stderr,"FALHA %s:%d: %s\n",__FILE__,__LINE__,#c);failures++;}}while(0)
+typedef struct{Source source;TokenArray tokens;ErrorList errors;Program *program;AnalysisResult result;bool ok;}Run;
+static Run analyze(const char *code){Run r;source_init(&r.source);token_array_init(&r.tokens);error_list_init(&r.errors);analysis_result_init(&r.result);r.program=NULL;r.ok=source_from_bytes(&r.source,"teste.lume",code,strlen(code));if(r.ok)r.ok=lexer_scan(&r.source,&r.tokens,&r.errors);if(r.ok)r.ok=parser_parse_program(&r.tokens,&r.program,&r.errors);if(r.ok)r.ok=analyzer_analyze(r.program,&r.result);return r;}
+static void release(Run *r){analysis_result_free(&r->result);program_free(r->program);error_list_free(&r->errors);token_array_free(&r->tokens);source_free(&r->source);}
+static size_t count_code(const Run *r,AnalysisCode code){size_t i,count=0U;for(i=0U;i<r->result.count;i++)if(r->result.diagnostics[i].code==code)count++;return count;}
+static void test_unused(void){Run r=analyze("variavel idade=18\nconstante PI=3.14\nfuncao soma(a,b){retorne a}\n");CHECK(r.ok);CHECK(count_code(&r,ANALYSIS_UNUSED_VARIABLE)==1U);CHECK(count_code(&r,ANALYSIS_UNUSED_CONSTANT)==1U);CHECK(count_code(&r,ANALYSIS_UNUSED_PARAMETER)==1U);CHECK(count_code(&r,ANALYSIS_UNUSED_FUNCTION)==1U);CHECK(r.result.errors==0U);release(&r);}
+static void test_flow(void){Run r=analyze("funcao f(){retorne 1\nvariavel x=2}\nse verdadeiro{}\nse falso{}\npara i de 10 ate 1{}\n");CHECK(r.ok);CHECK(count_code(&r,ANALYSIS_UNREACHABLE)==1U);CHECK(count_code(&r,ANALYSIS_CONSTANT_CONDITION)==2U);CHECK(count_code(&r,ANALYSIS_EMPTY_FOR)==1U);CHECK(count_code(&r,ANALYSIS_UNUSED_ITERATOR)==1U);release(&r);}
+static void test_scopes_functions_and_lists(void){Run r=analyze("variavel valor=10\n{variavel valor=20}\nfuncao dobro(x){retorne x*2}\nvariavel f=dobro\nfuncao usa(fn){retorne fn}\nvariavel g=usa(dobro)\nfuncao externa(){variavel x=10;funcao interna(){retorne x};retorne interna}\nvariavel h=externa\nvariavel lista=[1]\nlista[0]=10\nescreva(lista[0])\n");CHECK(r.ok);CHECK(count_code(&r,ANALYSIS_SHADOWING)>=1U);CHECK(count_code(&r,ANALYSIS_UNUSED_FUNCTION)==0U);CHECK(r.result.metrics.lists==1U);CHECK(r.result.errors==0U);release(&r);}
+static void test_name_suggestion(void){Run r=analyze("variavel quantidade=10\nescreva(quantdade)\n");size_t i;bool found=false;CHECK(r.ok);CHECK(count_code(&r,ANALYSIS_UNDEFINED_NAME)==1U);for(i=0U;i<r.result.count;i++)if(r.result.diagnostics[i].code==ANALYSIS_UNDEFINED_NAME){found=r.result.diagnostics[i].suggestion!=NULL&&strcmp(r.result.diagnostics[i].suggestion,"quantidade")==0;}CHECK(found);CHECK(r.result.errors==1U);release(&r);r=analyze("variavel resultado=10\nescreva(zebra)\n");for(i=0U;i<r.result.count;i++)if(r.result.diagnostics[i].code==ANALYSIS_UNDEFINED_NAME)CHECK(r.result.diagnostics[i].suggestion==NULL);release(&r);}
+static void test_overwritten(void){Run r=analyze("variavel x=10\nx=20\nescreva(x)\n");CHECK(r.ok);CHECK(count_code(&r,ANALYSIS_OVERWRITTEN_VALUE)==1U);release(&r);}
+static void test_cli_does_not_execute(void){FILE *out=tmpfile();RuntimeIO io={stdin,out};char *argv[]={"lume","--analisar","exemplos/analise.lume"};char buffer[8192];size_t n;CHECK(cli_run(3,argv,io)==0);rewind(out);n=fread(buffer,1U,sizeof(buffer)-1U,out);buffer[n]='\0';CHECK(strstr(buffer,"Analisando:")!=NULL);CHECK(strstr(buffer,"NAO DEVE APARECER\n")==NULL);CHECK(strstr(buffer,"Estrutura:")!=NULL);fclose(out);}
+int main(void){test_unused();test_flow();test_scopes_functions_and_lists();test_name_suggestion();test_overwritten();test_cli_does_not_execute();if(failures==0){puts("Todos os testes do analyzer passaram.");return 0;}return 1;}

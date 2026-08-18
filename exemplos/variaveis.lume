@@ -1,0 +1,5 @@
+// Execute com: lume exemplos/variaveis.lume
+variavel nome = "João"
+constante ano = 2026
+escreva(nome)
+escreva(ano)

@@ -1,0 +1,4 @@
+nome = "wrong_name"
+versao = "1.0.0"
+entrada = "src/principal.lume"
+dependencia.math = "../matematica"

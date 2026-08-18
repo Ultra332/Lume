@@ -1,0 +1,9 @@
+importe "matematica"
+importe "contador"
+importe "contador.lume"
+escreva(tipo(matematica))
+escreva(texto(matematica))
+escreva(matematica.somar(10, 20))
+escreva(contador.proximo())
+escreva(contador.proximo())
+escreva(matematica.lista()[1])

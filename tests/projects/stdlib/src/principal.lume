@@ -1,0 +1,2 @@
+importe "lume/matematica"
+escreva(matematica.raiz(25))

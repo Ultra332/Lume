@@ -1,0 +1,8 @@
+variavel numeros = [3, 8, 5]
+variavel alvo = 8
+variavel posicao = -1
+para i de 0 ate tamanho(numeros) - 1 {
+    se numeros[i] == alvo { posicao = i }
+}
+escreva(posicao)
+

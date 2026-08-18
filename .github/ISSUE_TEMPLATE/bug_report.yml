@@ -1,0 +1,36 @@
+name: Relatar um bug
+description: Informe um comportamento incorreto e reproduzível.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Não publique vulnerabilidades ou dados sensíveis; consulte SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Versão
+      description: Saída de `lume --versao`.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Plataforma
+      placeholder: Windows 11 / MSYS2 UCRT64, Ubuntu 24.04...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reprodução mínima
+      description: Código e comandos mínimos para reproduzir.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado e observado
+    validations:
+      required: true
+

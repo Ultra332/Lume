@@ -1,0 +1,5 @@
+exporte constante PI = 3.14159
+
+exporte funcao dobro(x) {
+    retorne x * 2
+}

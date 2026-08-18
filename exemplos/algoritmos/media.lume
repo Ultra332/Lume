@@ -1,0 +1,7 @@
+variavel numeros = [7, 8, 9]
+variavel soma = 0
+para i de 0 ate tamanho(numeros) - 1 {
+    soma = soma + numeros[i]
+}
+escreva(soma / tamanho(numeros))
+

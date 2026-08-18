@@ -1,0 +1,4 @@
+nome = "module_path"
+versao = "1.2.3"
+entrada = "src/principal.lume"
+caminhos_modulos = ["bibliotecas\\"]

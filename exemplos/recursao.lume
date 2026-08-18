@@ -1,0 +1,9 @@
+funcao fatorial(n) {
+    se n <= 1 {
+        retorne 1
+    }
+
+    retorne n * fatorial(n - 1)
+}
+
+escreva(fatorial(5))

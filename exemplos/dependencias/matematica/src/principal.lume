@@ -1,0 +1,3 @@
+exporte funcao dobro(valor) {
+    retorne valor * 2
+}

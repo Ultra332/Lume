@@ -1,0 +1,2 @@
+importe "cycle_a"
+exporte constante b = 2

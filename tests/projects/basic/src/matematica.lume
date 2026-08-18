@@ -1,0 +1,3 @@
+exporte funcao somar(a, b) {
+    retorne a + b
+}

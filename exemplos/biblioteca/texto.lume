@@ -1,0 +1,3 @@
+importe "lume/texto"
+escreva(texto.maiusculo("Lume"))
+escreva(texto.junte(["a", "b", "c"], ","))

@@ -1,0 +1,4 @@
+importe "matematica"
+importe "matematica/trigonometria"
+escreva(matematica.somar(10, 20))
+escreva(trigonometria.valor)

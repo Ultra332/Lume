@@ -1,0 +1,14 @@
+// Exemplo criado para demonstrar avisos de `lume --analisar`.
+variavel resultado = 10
+constante limite = 3
+
+funcao escolher(valor, alternativa) {
+    se verdadeiro {
+        retorne valor
+        escreva("NAO DEVE APARECER")
+    }
+}
+
+para indice de 10 ate 1 {
+    escreva("NAO DEVE APARECER")
+}

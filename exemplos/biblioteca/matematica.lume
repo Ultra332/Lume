@@ -1,0 +1,3 @@
+importe "lume/matematica"
+escreva(matematica.raiz(81))
+escreva(matematica.PI)

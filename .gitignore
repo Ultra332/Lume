@@ -1,0 +1,32 @@
+# Build products
+lume
+lume.exe
+/test_*
+src/*.o
+src/*.obj
+tests/*.o
+tests/*.obj
+tests/test_*
+!tests/test_*.c
+dist/
+build/
+out/
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+*.log
+
+# Editor and platform files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.tmp
+*.temp
+
+# lume.lock is intentionally versioned for reproducible projects.

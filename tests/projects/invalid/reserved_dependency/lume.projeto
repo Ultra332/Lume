@@ -1,0 +1,4 @@
+nome = "reservado"
+versao = "0.1.0"
+entrada = "src/principal.lume"
+dependencia.lume = "../../../stdlib"

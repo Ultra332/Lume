@@ -1,0 +1,7 @@
+importe "matematica"
+importe "contador.lume"
+
+escreva(matematica.PI)
+escreva(matematica.dobro(10))
+escreva(contador.proximo())
+escreva(contador.proximo())

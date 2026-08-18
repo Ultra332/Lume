@@ -1,0 +1,3 @@
+importe "lume/tempo"
+escreva(tempo.agora())
+escreva(tempo.timestamp())

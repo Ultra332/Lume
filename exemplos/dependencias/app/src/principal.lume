@@ -1,0 +1,2 @@
+importe "matematica"
+escreva(matematica.dobro(21))

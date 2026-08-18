@@ -1,0 +1,3 @@
+importe "matematica"
+
+escreva(matematica.somar(10, 20))

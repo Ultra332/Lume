@@ -1,0 +1,13 @@
+// Execute com: lume exemplos/repeticao.lume
+variavel soma = 0
+
+para i de 1 ate 5 {
+    soma = soma + i
+}
+
+variavel contador = 0
+enquanto contador < 3 {
+    contador = contador + 1
+}
+
+escreva(soma)
