@@ -4,7 +4,7 @@ void error_list_init(ErrorList *list) {
     if (list != NULL) { list->data = NULL; list->count = 0U; list->capacity = 0U; }
 }
 bool error_list_add(ErrorList *list, LumeError error) {
-    LumeError *grown; size_t capacity;
+    LumeError *grown; size_t capacity; char *subject_copy = NULL;
     if (list == NULL) return false;
     if (list->count == list->capacity) {
         if (list->count == SIZE_MAX) return false;
@@ -13,11 +13,27 @@ bool error_list_add(ErrorList *list, LumeError error) {
         if (grown == NULL) return false;
         list->data = grown; list->capacity = capacity;
     }
+    /* 'subject' costuma apontar para dentro da AST, que pode ser liberada antes
+       do diagnostico ser exibido. A lista guarda uma copia propria. Se a copia
+       falhar, o erro ainda e registrado sem o nome: perder o diagnostico inteiro
+       seria pior do que perder um detalhe dele. */
+    if (error.subject != NULL && error.subject_length > 0U) {
+        subject_copy = memory_copy_string(error.subject, error.subject_length);
+    }
+    if (subject_copy == NULL) { error.subject = NULL; error.subject_length = 0U; }
+    else { error.subject = subject_copy; }
     list->data[list->count++] = error;
     return true;
 }
 void error_list_free(ErrorList *list) {
-    if (list != NULL) { memory_free(list->data); error_list_init(list); }
+    size_t index;
+    if (list == NULL) return;
+    for (index = 0U; index < list->count; index++) {
+        /* A copia foi feita em error_list_add; o const descreve o uso, nao a posse. */
+        memory_free((char *)list->data[index].subject);
+        list->data[index].subject = NULL; list->data[index].subject_length = 0U;
+    }
+    memory_free(list->data); error_list_init(list);
 }
 const char *error_kind_name(LumeErrorKind kind) {
     switch (kind) {
