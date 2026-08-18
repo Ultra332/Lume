@@ -2,6 +2,23 @@
 
 Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [Nao lancado]
+
+### Corrigido
+
+- `ErrorList` agora e dona da copia do nome citado no diagnostico (`LumeError.subject`).
+  Antes, o nome apontava para dentro da AST, que `session_execute` libera no caminho de
+  erro; `diagnostic_render` entao lia memoria ja liberada e imprimia lixo em vez do nome
+  (`escreva(xyz)` mostrava `Nome: '   '` no lugar de `Nome: 'xyz'`).
+- `tests/test_diagnostics.c` passava um comprimento maior que o do literal para
+  `source_from_bytes`, causando leitura fora dos limites e abortando `make sanitize`
+  antes das ultimas suites.
+
+### Adicionado
+
+- teste de regressao que exibe o diagnostico depois da liberacao da AST;
+- job de CI que executa `make sanitize` (AddressSanitizer + UBSan).
+
 ## [0.1.0] — 2026-08-18
 
 Primeira candidata a release pública da Lume.
