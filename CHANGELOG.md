@@ -17,6 +17,7 @@ Primeira candidata a release pública da Lume.
 - comando de projeto `lume testar`, com descoberta determinística de `tests/*.lume`;
 - execução automática do projeto atual ao chamar `lume` em uma pasta com manifesto;
 - guias para instalação, solução de problemas, projetos e uso da linguagem.
+- identidade visual e ícone multirresolução incorporado ao executável e ao instalador Windows.
 
 ### Alterado
 

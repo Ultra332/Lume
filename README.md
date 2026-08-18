@@ -1,5 +1,9 @@
 # Lume
 
+<p align="center">
+  <img src="assets/lume.png" alt="Logo da linguagem Lume" width="144">
+</p>
+
 [![CI](https://github.com/Ultra332/Lume/actions/workflows/ci.yml/badge.svg)](https://github.com/Ultra332/Lume/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Ultra332/Lume?label=release)]([https://github.com/Ultra332/Lume/releases](https://github.com/Ultra332/Lume/releases/tag/v0.1.0))
 [![License](https://img.shields.io/github/license/Ultra332/Lume)](LICENSE)
