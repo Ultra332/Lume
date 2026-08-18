@@ -62,6 +62,10 @@ fi
 
 ISCC_PATH="${ISCC:-}"
 if [ -z "$ISCC_PATH" ] && command -v iscc >/dev/null 2>&1; then ISCC_PATH=$(command -v iscc); fi
+if [ -z "$ISCC_PATH" ] && [ -n "${LOCALAPPDATA:-}" ] && command -v cygpath >/dev/null 2>&1; then
+    LOCAL_ISCC="$(cygpath -u "$LOCALAPPDATA")/Programs/Inno Setup 6/ISCC.exe"
+    if [ -x "$LOCAL_ISCC" ]; then ISCC_PATH="$LOCAL_ISCC"; fi
+fi
 if [ -z "$ISCC_PATH" ] && [ -x "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" ]; then ISCC_PATH="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"; fi
 if [ -z "$ISCC_PATH" ] && [ -x "/c/Program Files/Inno Setup 6/ISCC.exe" ]; then ISCC_PATH="/c/Program Files/Inno Setup 6/ISCC.exe"; fi
 if [ -n "$ISCC_PATH" ]; then
