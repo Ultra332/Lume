@@ -1,6 +1,9 @@
 # Começando com Lume
 
-Este guia pressupõe que `lume --versao` já funciona. Você pode experimentar no REPL executando apenas `lume`, ou salvar os exemplos em arquivos `.lume`.
+Este guia pressupõe que `lume --versao` já funciona. Você pode experimentar no
+REPL executando apenas `lume` em uma pasta sem `lume.projeto`, ou salvar os
+exemplos em arquivos `.lume`. Dentro de um projeto, `lume` executa o programa
+principal automaticamente.
 
 ## Valores e nomes
 
@@ -51,4 +54,6 @@ variavel numeros = [2, 4, 6]
 escreva(dobro(numeros[0]))
 ```
 
-Continue com [algoritmos](algoritmos.md), consulte a referência em [LANGUAGE.md](../LANGUAGE.md) e experimente os arquivos em `exemplos/basico`.
+Continue com o [guia de uso](guia-de-uso.md) e [algoritmos](algoritmos.md),
+consulte a referência em [LANGUAGE.md](../LANGUAGE.md) e experimente os arquivos
+em `exemplos/basico`.

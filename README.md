@@ -33,7 +33,8 @@ lume ola.lume
 - REPL e diagnósticos em português;
 - análise estática educacional, explicação e execução passo a passo.
 
-A referência da sintaxe e semântica está em [LANGUAGE.md](LANGUAGE.md).
+A referência da sintaxe e semântica está em [LANGUAGE.md](LANGUAGE.md). Se esta
+é sua primeira vez com a linguagem, siga o [guia de uso](docs/guia-de-uso.md).
 
 ## Instalação
 
@@ -82,7 +83,10 @@ lume --ajuda                   mostra a ajuda completa
 - `--explicar` acompanha a execução e descreve acontecimentos observados.
 - `--passo` pausa entre etapas, permitindo acompanhar o estado do programa.
 
-Guias: [começando](docs/comecando.md), [modos educacionais](docs/modos-educacionais.md), [algoritmos](docs/algoritmos.md), [uso em sala](docs/para-professores.md) e [próximos estudos](docs/depois-da-lume.md).
+Guias: [índice da documentação](docs/README.md), [começando](docs/comecando.md),
+[guia de uso](docs/guia-de-uso.md), [modos educacionais](docs/modos-educacionais.md),
+[algoritmos](docs/algoritmos.md), [uso em sala](docs/para-professores.md) e
+[próximos estudos](docs/depois-da-lume.md).
 
 ## Projetos e módulos
 

@@ -13,6 +13,16 @@ Primeira candidata a release pública da Lume.
 - módulos, projetos de múltiplos arquivos, dependências locais e lockfile;
 - biblioteca padrão organizada;
 - 15 suítes automatizadas, documentação pública e automação de release para Windows.
+- instalador Windows por usuário, pacote portátil e checksums SHA-256;
+- comando de projeto `lume testar`, com descoberta determinística de `tests/*.lume`;
+- execução automática do projeto atual ao chamar `lume` em uma pasta com manifesto;
+- guias para instalação, solução de problemas, projetos e uso da linguagem.
+
+### Alterado
+
+- o REPL não exibe uma segunda linha `nulo` após chamadas como `escreva(...)`;
+- a instalação para usuários finais não exige GCC, Make ou MSYS2;
+- o comando `lume` sem argumentos continua abrindo o REPL fora de projetos.
 
 ### Observações
 

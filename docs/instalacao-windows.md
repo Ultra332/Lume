@@ -22,6 +22,33 @@ O resultado esperado é `Lume 0.1.0`. PowerShell, CMD e o terminal integrado do
 VS Code reconhecem o mesmo `PATH`; terminais que já estavam abertos precisam ser
 reiniciados.
 
+#### Se `lume` não funcionar no terminal do VS Code
+
+O VS Code herda o `PATH` existente no momento em que é aberto. Feche todas as
+janelas do VS Code, confirme que não há `Code.exe` no Gerenciador de Tarefas e
+abra-o novamente. Depois execute:
+
+```powershell
+Get-Command lume
+lume --versao
+```
+
+Para confirmar a instalação diretamente:
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Lume\lume.exe" --versao
+```
+
+Se o comando direto funcionar, mas `Get-Command lume` não encontrar nada,
+confira a entrada no `PATH` do usuário:
+
+```powershell
+[Environment]::GetEnvironmentVariable("Path", "User") -split ";"
+```
+
+Ela deve conter `%LOCALAPPDATA%\Programs\Lume`. Não substitua o conteúdo inteiro
+do `PATH` para corrigir uma entrada ausente.
+
 Para remover, use Configurações → Aplicativos → Aplicativos instalados → Lume →
 Desinstalar. O desinstalador remove somente a pasta da Lume do `PATH` do usuário.
 
@@ -58,3 +85,4 @@ Usuários comuns não precisam de GCC, Make, MSYS2 ou código-fonte. Essas
 ferramentas são necessárias somente para modificar a implementação. Consulte
 [desenvolvimento.md](desenvolvimento.md) e [CONTRIBUTING.md](../CONTRIBUTING.md).
 
+Depois de instalar, continue pelo [guia de uso](guia-de-uso.md).
