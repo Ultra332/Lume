@@ -13,10 +13,14 @@ Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://k
 - `tests/test_diagnostics.c` passava um comprimento maior que o do literal para
   `source_from_bytes`, causando leitura fora dos limites e abortando `make sanitize`
   antes das ultimas suites.
+- recursao sem caso base derrubava o processo com SIGSEGV e nenhuma mensagem, por
+  falta de um teto de profundidade de chamada. Agora produz um diagnostico de
+  execucao normal, com a dica sobre caso base.
 
 ### Adicionado
 
 - teste de regressao que exibe o diagnostico depois da liberacao da AST;
+- teste de regressao para recursao infinita e para recursao legitima profunda;
 - job de CI que executa `make sanitize` (AddressSanitizer + UBSan).
 
 ## [0.1.0] — 2026-08-18

@@ -68,9 +68,24 @@ static void test_errors(void) {
     expect_error("funcao f(){ retorne inexistente }\nf()\n");
     expect_error("funcao escreva(){ }\n");
 }
+/* Recursao sem caso base derrubava o processo com SIGSEGV, sem diagnostico
+   nenhum. Agora precisa virar um erro normal, e recursao legitima mais funda
+   que os exercicios de aula tem de continuar valendo. */
+static void test_recursion_depth_limit(void) {
+    Run run = run_text("funcao g() {\n retorne g()\n}\nescreva(g())\n");
+    CHECK(!run.ok); CHECK(run.errors.count == 1U);
+    if (run.errors.count == 1U) {
+        CHECK(run.errors.data[0].kind == LUME_ERROR_RUNTIME);
+        CHECK(strstr(run.errors.data[0].message, "vezes demais") != NULL);
+        CHECK(run.errors.data[0].suggestion != NULL);
+        CHECK(strstr(run.errors.data[0].suggestion, "caso base") != NULL);
+    }
+    run_free(&run);
+    expect_integer("funcao f(x) {\n se x <= 1 {\n  retorne 1\n }\n retorne 1 + f(x-1)\n}\nvariavel r = f(50)\n", "r", 50);
+}
 int main(void) {
     test_basics(); test_recursion_and_hoisting(); test_closures(); test_values_calls_and_return_flow();
-    test_native_output(); test_errors();
+    test_native_output(); test_errors(); test_recursion_depth_limit();
     if (failures == 0) { puts("Todos os testes de funcoes passaram."); return 0; }
     fprintf(stderr, "%d teste(s) falharam.\n", failures); return 1;
 }

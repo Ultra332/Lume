@@ -1,4 +1,11 @@
 #include "interpreter.h"
+/* Cada chamada de funcao Lume consome varios KB de pilha C, porque o
+   interpretador e recursivo. Sem um teto, uma recursao sem caso base derruba o
+   processo com SIGSEGV e nenhuma mensagem — justamente o erro que um iniciante
+   mais comete ao estudar recursao. O limite transforma isso em diagnostico.
+   200 e folgado para exercicios (o fatorial de 20 usa 20 niveis) e fica bem
+   abaixo do que a pilha suporta. */
+#define LUME_MAX_CALL_DEPTH 200U
 
 #include <math.h>
 #include <errno.h>
@@ -376,6 +383,11 @@ decimal_error:
             if (!environment_define(call_environment, declaration->as.function.parameters[index],
                     declaration->as.function.parameter_lengths[index], &arguments[index], true,
                     declaration->as.function.parameter_spans[index], errors)) return false;
+        }
+        if (runtime->call_depth >= LUME_MAX_CALL_DEPTH) {
+            return fail(errors, span,
+                "A funcao chamou a si mesma vezes demais e a execucao foi interrompida.",
+                "Toda recursao precisa de um caso base que pare as chamadas. Confira se a condicao de parada e alcancada.");
         }
         runtime->call_depth++;
         { TraceEvent enter_event=trace_event(TRACE_FUNCTION_ENTER,span,call_environment);enter_event.name=callable->name;enter_event.name_length=strlen(callable->name);emit(runtime,enter_event); }
