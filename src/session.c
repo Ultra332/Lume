@@ -79,8 +79,9 @@ static bool retain(LumeSession *session, Program *program, Source *source) {
     session->programs[session->retained_count] = program; session->sources[session->retained_count] = source;
     session->retained_count++; return true;
 }
-bool session_execute(LumeSession *session, const char *name, const char *text, size_t length,
-                     bool print_expression, Source **error_source, ErrorList *errors) {
+static bool session_execute_internal(LumeSession *session, const char *name, const char *text,
+                     size_t length, bool print_expression, bool suppress_null_call,
+                     Source **error_source, ErrorList *errors) {
     Source *source = memory_allocate(sizeof(*source)); TokenArray tokens; Program *program = NULL; bool ok;
     Value result = value_null();
     if (source == NULL) return false;
@@ -96,7 +97,10 @@ bool session_execute(LumeSession *session, const char *name, const char *text, s
         program->statements.data[0]->type == STMT_EXPRESSION) {
         ok = interpreter_evaluate_expression_with_io(program->statements.data[0]->as.expression.expression,
             &session->environment, &session->io, &result, errors);
-        if (ok) { value_print(session->io.output, &result); fputc('\n', session->io.output); }
+        if (ok && (!suppress_null_call || result.type != VALUE_NULL ||
+                   program->statements.data[0]->as.expression.expression->type != EXPR_CALL)) {
+            value_print(session->io.output, &result); fputc('\n', session->io.output);
+        }
         value_free(&result);
     } else if (ok) { LumeModule current; memset(&current,0,sizeof(current)); current.path=(char *)name;
         ok=interpreter_execute_program_with_modules(program,&session->environment,&session->io,NULL,&session->modules,&current,errors); }
@@ -108,4 +112,12 @@ bool session_execute(LumeSession *session, const char *name, const char *text, s
     }
     if (!ok && program != NULL) program_free(program);
     return ok;
+}
+bool session_execute(LumeSession *session, const char *name, const char *text, size_t length,
+                     bool print_expression, Source **error_source, ErrorList *errors) {
+    return session_execute_internal(session,name,text,length,print_expression,false,error_source,errors);
+}
+bool session_execute_repl(LumeSession *session, const char *name, const char *text, size_t length,
+                          Source **error_source, ErrorList *errors) {
+    return session_execute_internal(session,name,text,length,true,true,error_source,errors);
 }

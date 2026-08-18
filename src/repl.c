@@ -43,7 +43,7 @@ int repl_run(RuntimeIO io) {
         if (session_classify(buffer, length) == INPUT_INCOMPLETE) { continuation = true; continue; }
         continuation = false; error_list_init(&errors);
         { char name[64]; (void)snprintf(name, sizeof(name), "<repl:%zu>", entry++);
-          ok = session_execute(&session, name, buffer, length, true, &error_source, &errors); }
+          ok = session_execute_repl(&session, name, buffer, length, &error_source, &errors); }
         if (!ok && errors.count > 0U) diagnostic_render(io.output, error_source, &errors.data[0]);
         if (!ok && error_source != NULL) { source_free(error_source); memory_free(error_source); }
         error_list_free(&errors); length = 0U; if (buffer != NULL) buffer[0] = '\0';

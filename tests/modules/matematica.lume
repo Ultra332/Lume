@@ -1,4 +1,15 @@
 variavel segredo = 99
+
 exporte constante PI = 3.14
-exporte funcao somar(a, b) { retorne a + b }
-exporte funcao lista() { retorne [1, 2, 3] }
+
+exporte funcao somar(a, b) {
+    retorne a + b
+}
+
+exporte funcao lista() {
+    retorne [1, 2, 3]
+}
+
+escreva(PI)
+escreva(somar(10, 20))
+escreva(lista())

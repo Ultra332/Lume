@@ -37,42 +37,34 @@ A referência da sintaxe e semântica está em [LANGUAGE.md](LANGUAGE.md).
 
 ## Instalação
 
-### Windows (MSYS2 UCRT64)
+### Windows
 
-1. Instale o [MSYS2](https://www.msys2.org/) e abra o terminal **MSYS2 UCRT64**.
-2. Instale o compilador e o Make:
+1. Baixe `Lume-0.1.0-Windows-x64-Setup.exe` na página de releases.
+2. Execute o instalador e conclua as etapas apresentadas.
+3. Abra um novo PowerShell, CMD ou terminal do VS Code.
+4. Verifique:
 
-   ```sh
-   pacman -Syu
-   pacman -S --needed mingw-w64-ucrt-x86_64-gcc make
+   ```powershell
+   lume --versao
    ```
 
-3. Na raiz do repositório, compile e valide:
+O instalador é offline, instala apenas para o usuário atual e não exige GCC,
+Make, MSYS2 ou o código-fonte.
 
-   ```sh
-   make clean
-   make
-   make test
-   ```
+### Versão portátil
 
-4. Execute `./lume.exe --versao`. Você pode copiar `lume.exe` para uma pasta presente no `PATH`.
+Baixe `Lume-0.1.0-Windows-x64.zip`, extraia todo o conteúdo e execute
+`lume.exe`. O ZIP não modifica o sistema; para chamar `lume` de qualquer pasta,
+adicione manualmente a pasta extraída ao `PATH`.
 
-### Linux
-
-Com GCC e Make instalados:
-
-```sh
-make clean
-make
-make test
-./lume --versao
-```
+Consulte o [guia completo de instalação no Windows](docs/instalacao-windows.md),
+incluindo checksums, desinstalação e o possível aviso do SmartScreen.
 
 ## Uso
 
 ```text
 lume arquivo.lume              executa um arquivo
-lume                           abre o REPL
+lume                           executa o projeto atual ou abre o REPL
 lume --analisar arquivo.lume   analisa sem executar
 lume --explicar arquivo.lume   explica durante a execução
 lume --passo arquivo.lume      executa passo a passo
@@ -80,6 +72,7 @@ lume novo nome                 cria um projeto
 lume executar [diretorio]      executa um projeto
 lume verificar [diretorio]     valida um projeto
 lume resolver [diretorio]      gera lume.lock
+lume testar [diretorio]        executa tests/*.lume do projeto
 lume --ajuda                   mostra a ajuda completa
 ```
 
@@ -93,11 +86,26 @@ Guias: [começando](docs/comecando.md), [modos educacionais](docs/modos-educacio
 
 ## Projetos e módulos
 
-Crie um projeto com `lume novo meu_projeto`. O manifesto `lume.projeto` define entrada, fonte e dependências locais; `lume resolver` produz o `lume.lock`, que deve ser versionado. Consulte [LANGUAGE.md](LANGUAGE.md) e [docs/biblioteca-padrao.md](docs/biblioteca-padrao.md).
+Crie e execute um projeto com:
 
-## Desenvolvimento
+```sh
+lume novo meu_projeto
+cd meu_projeto
+lume
+```
 
-O build usa C11 e os avisos `-Wall -Wextra -Wpedantic -Wconversion -Wshadow` como parte do contrato de qualidade.
+Quando o diretório atual contém `lume.projeto`, `lume` executa esse projeto; fora de um projeto, abre o REPL. O manifesto define entrada, fonte e dependências locais, e `lume resolver` produz o `lume.lock`, que deve ser versionado.
+
+Para testes simples, crie `tests/exemplo.lume` na raiz do projeto e execute `lume testar`. Consulte o [guia de projetos](docs/projetos.md), [LANGUAGE.md](LANGUAGE.md) e a [biblioteca padrão](docs/biblioteca-padrao.md).
+
+## Desenvolvendo a Lume
+
+Esta seção é somente para quem deseja modificar a implementação. Usuários da
+linguagem não precisam instalar compilador ou baixar o código-fonte.
+
+Contribuidores devem clonar o repositório e usar MSYS2 UCRT64/GCC e Make no
+Windows. O build usa C11 e os avisos `-Wall -Wextra -Wpedantic -Wconversion
+-Wshadow` como parte do contrato de qualidade.
 
 ```sh
 make clean
@@ -106,7 +114,7 @@ make test
 make sanitize   # quando AddressSanitizer/UBSan estiverem disponíveis
 ```
 
-A arquitetura está descrita em [ARCHITECTURE.md](ARCHITECTURE.md), os testes em [tests/README.md](tests/README.md) e as regras de colaboração em [CONTRIBUTING.md](CONTRIBUTING.md).
+A arquitetura está descrita em [ARCHITECTURE.md](ARCHITECTURE.md), os testes em [tests/README.md](tests/README.md) e as regras de colaboração em [CONTRIBUTING.md](CONTRIBUTING.md). Veja também o [guia de desenvolvimento](docs/desenvolvimento.md).
 
 ## Projeto e comunidade
 

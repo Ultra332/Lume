@@ -16,4 +16,6 @@ void session_free(LumeSession *session);
 InputStatus session_classify(const char *text, size_t length);
 bool session_execute(LumeSession *session, const char *name, const char *text, size_t length,
                      bool print_expression, Source **error_source, ErrorList *errors);
+bool session_execute_repl(LumeSession *session, const char *name, const char *text, size_t length,
+                          Source **error_source, ErrorList *errors);
 #endif

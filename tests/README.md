@@ -53,3 +53,7 @@ Execute as quinze suítes na raiz com `make test`.
 Na integração contínua, o mesmo alvo é executado em Linux com GCC. Antes de uma
 release Windows, `scripts/build-windows.sh` repete o build e todas as suítes
 antes de copiar o executável; nenhum teste específico é omitido no pacote.
+
+`test_cli.c` também valida o despacho contextual de `lume`, execução direta de
+scripts, ajuda e `lume testar`: descoberta direta em `tests/`, ordenação
+lexicográfica, ausência de testes e propagação de falhas.

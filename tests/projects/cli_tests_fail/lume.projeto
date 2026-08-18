@@ -1,0 +1,5 @@
+nome = "cli_tests_fail"
+versao = "0.1.0"
+entrada = "src/principal.lume"
+fonte = "src"
+
