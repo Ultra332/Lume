@@ -38,6 +38,7 @@ static SourceSpan current_span(const Lexer *lexer) {
     SourceSpan span;
     span.start = location(lexer->start, lexer->start_line, lexer->start_column);
     span.end = location(lexer->current, lexer->line, lexer->column);
+    span.source = lexer->source;
     return span;
 }
 static bool report_error(Lexer *lexer, const char *message, const char *suggestion) {

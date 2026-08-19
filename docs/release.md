@@ -20,7 +20,7 @@ No terminal MSYS2 UCRT64, na raiz:
 sh scripts/build-release-windows.sh
 ```
 
-O script limpa o build, compila, executa as 15 suítes, gera metadata do
+O script limpa o build, compila, executa as 16 suítes, gera metadata do
 executável, faz link estático dos runtimes do GCC, audita DLLs, monta o ZIP,
 tenta compilar o instalador e produz `SHA256SUMS.txt`.
 
@@ -28,8 +28,8 @@ Saída esperada:
 
 ```text
 dist/
-├── Lume-0.1.0-Windows-x64-Setup.exe
-├── Lume-0.1.0-Windows-x64.zip
+├── Lume-0.1.1-Windows-x64-Setup.exe
+├── Lume-0.1.1-Windows-x64.zip
 └── SHA256SUMS.txt
 ```
 
@@ -71,12 +71,11 @@ dois arquivos com `SHA256SUMS.txt` antes de publicar.
 
 - revisar versão, README, CHANGELOG, LICENSE, SECURITY e contatos humanos;
 - validar instalação e desinstalação em uma máquina limpa;
-- anexar `Lume-0.1.0-Windows-x64-Setup.exe`;
-- anexar `Lume-0.1.0-Windows-x64.zip`;
+- anexar `Lume-0.1.1-Windows-x64-Setup.exe`;
+- anexar `Lume-0.1.1-Windows-x64.zip`;
 - anexar `SHA256SUMS.txt`;
 - informar Windows x64, diretório de instalação e dependências de runtime;
 - criar tag somente após revisão humana.
 
 Sem assinatura de código, o SmartScreen pode avisar que o editor é desconhecido.
 Não contorne nem desabilite essa proteção. Assinatura é uma melhoria futura.
-

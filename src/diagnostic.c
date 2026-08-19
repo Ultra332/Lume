@@ -2,6 +2,7 @@
 #include <string.h>
 void diagnostic_render(FILE *stream, const Source *source, const LumeError *error) {
     size_t line_start, line_end, marker_start, marker_length, index;
+    if (error != NULL && error->span.source != NULL) source = error->span.source;
     if (stream == NULL || source == NULL || error == NULL) return;
     fprintf(stream, "%s:%zu:%zu\n\n", source->name, error->span.start.line, error->span.start.column);
     line_start = error->span.start.offset <= source->length ? error->span.start.offset : source->length;

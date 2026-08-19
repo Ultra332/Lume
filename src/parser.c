@@ -7,6 +7,7 @@
 
 typedef struct Parser Parser;
 typedef Expr *(*ParseFunction)(Parser *);
+#define LUME_MAX_PARSE_DEPTH 128U
 struct Parser {
     const TokenArray *tokens;
     ErrorList *errors;
@@ -16,6 +17,7 @@ struct Parser {
     bool failed;
     size_t function_depth;
     size_t block_depth;
+    size_t parse_depth;
 };
 
 static void skip_newlines(Parser *parser) {
@@ -51,7 +53,7 @@ static bool match_any(Parser *parser, const TokenType *types, size_t count, cons
 }
 static SourceSpan fallback_span(Parser *parser) {
     const Token *token = peek_token(parser);
-    SourceSpan span = {{0U, 1U, 1U}, {0U, 1U, 1U}};
+    SourceSpan span = {{0U, 1U, 1U}, {0U, 1U, 1U}, NULL};
     if (token != NULL) span = token->span;
     else if (parser->tokens->count > 0U) span = parser->tokens->data[parser->tokens->count - 1U].span;
     return span;
@@ -105,6 +107,19 @@ static bool parse_decimal_value(const Token *token, Value *out) {
 }
 
 static Expr *parse_or(Parser *parser);
+static Expr *parse_nested(Parser *parser) {
+    Expr *expression;
+    if (parser->parse_depth >= LUME_MAX_PARSE_DEPTH) {
+        parser_error(parser, fallback_span(parser),
+            "A expressao esta aninhada profundamente demais.",
+            "Simplifique a expressao ou divida-a em partes menores.");
+        return NULL;
+    }
+    parser->parse_depth++;
+    expression = parse_or(parser);
+    parser->parse_depth--;
+    return expression;
+}
 static UnaryOperator unary_operator(TokenType type) {
     if (type == TOKEN_PLUS) return UNARY_POSITIVE;
     if (type == TOKEN_MINUS) return UNARY_NEGATIVE;
@@ -164,7 +179,7 @@ static Expr *parse_primary(Parser *parser) {
         SourceSpan span;
         parser->current++;
         parser->grouping_depth++;
-        expression = parse_or(parser);
+        expression = parse_nested(parser);
         parser->grouping_depth--;
         if (expression == NULL) return NULL;
         skip_newlines(parser);
@@ -173,7 +188,7 @@ static Expr *parse_primary(Parser *parser) {
                 "Adicione ')' ao final da expressao iniciada com '('.");
             expr_free(expression); return NULL;
         }
-        span.start = left->span.start; span.end = right->span.end;
+        span.start = left->span.start; span.end = right->span.end; span.source = left->span.source;
         {
             Expr *grouping = expr_new_grouping(expression, span);
             if (grouping == NULL) { expr_free(expression); parser_memory_error(parser, span); }
@@ -184,7 +199,7 @@ static Expr *parse_primary(Parser *parser) {
         const Token *left=token,*right; Expr **elements=NULL; size_t count=0U,capacity=0U; SourceSpan span;
         parser->current++; parser->grouping_depth++; skip_newlines(parser);
         if (peek_token(parser)!=NULL && peek_token(parser)->type!=TOKEN_RIGHT_BRACKET) {
-            for (;;) { Expr *element=parse_or(parser); Expr **grown; size_t next;
+            for (;;) { Expr *element=parse_nested(parser); Expr **grown; size_t next;
                 if(element==NULL)goto list_error;
                 if(count==capacity){if(!memory_grow_capacity(capacity,count+1U,&next)){expr_free(element);goto list_memory;}grown=memory_reallocate_array(elements,next,sizeof(*grown));if(grown==NULL){expr_free(element);goto list_memory;}elements=grown;capacity=next;}
                 elements[count++]=element;skip_newlines(parser);if(!match_token(parser,TOKEN_COMMA,NULL))break;skip_newlines(parser);
@@ -192,7 +207,7 @@ static Expr *parse_primary(Parser *parser) {
             }
         }
         skip_newlines(parser);if(!match_token(parser,TOKEN_RIGHT_BRACKET,&right)){parser_error(parser,fallback_span(parser),"Era esperado ']' para fechar a lista.","Adicione ']' depois do ultimo elemento.");goto list_error;}
-        parser->grouping_depth--;span.start=left->span.start;span.end=right->span.end;expression=expr_new_list(elements,count,span);if(expression==NULL)goto list_memory_after;return expression;
+        parser->grouping_depth--;span.start=left->span.start;span.end=right->span.end;span.source=left->span.source;expression=expr_new_list(elements,count,span);if(expression==NULL)goto list_memory_after;return expression;
 list_memory: parser_memory_error(parser,left->span);
 list_error: parser->grouping_depth--;
 list_memory_after: while(count>0U)expr_free(elements[--count]);memory_free(elements);return NULL;
@@ -219,15 +234,15 @@ static Expr *parse_call(Parser *parser) {
         if (match_token(parser,TOKEN_DOT,&left)) {
             const Token *member; Expr *access;
             if(!match_token(parser,TOKEN_IDENTIFIER,&member)){parser_error(parser,fallback_span(parser),"Era esperado um membro depois de '.'.","Use modulo.nome para acessar um export.");expr_free(callee);return NULL;}
-            span.start=callee->span.start;span.end=member->span.end;
+            span.start=callee->span.start;span.end=member->span.end;span.source=callee->span.source;
             access=expr_new_member(callee,token_lexeme(member),token_length(member),member->span,span);
             if(access==NULL){expr_free(callee);parser_memory_error(parser,span);return NULL;}callee=access;continue;
         }
         if (match_token(parser,TOKEN_LEFT_BRACKET,&left)) {
-            Expr *index; parser->grouping_depth++; index=parse_or(parser); skip_newlines(parser);
+            Expr *index; parser->grouping_depth++; index=parse_nested(parser); skip_newlines(parser);
             if(index==NULL){parser->grouping_depth--;expr_free(callee);return NULL;}
             if(!match_token(parser,TOKEN_RIGHT_BRACKET,&right)){parser->grouping_depth--;parser_error(parser,fallback_span(parser),"Era esperado ']' depois do indice.","Feche a indexacao com ']'.");expr_free(index);expr_free(callee);return NULL;}
-            parser->grouping_depth--;span.start=callee->span.start;span.end=right->span.end;
+            parser->grouping_depth--;span.start=callee->span.start;span.end=right->span.end;span.source=callee->span.source;
             {Expr *indexed=expr_new_index(callee,index,span);if(indexed==NULL){expr_free(index);expr_free(callee);parser_memory_error(parser,span);return NULL;}callee=indexed;}
             continue;
         }
@@ -236,7 +251,7 @@ static Expr *parse_call(Parser *parser) {
         skip_newlines(parser);
         if (peek_token(parser) != NULL && peek_token(parser)->type != TOKEN_RIGHT_PAREN) {
             for (;;) {
-                Expr *argument = parse_or(parser);
+                Expr *argument = parse_nested(parser);
                 Expr **grown;
                 size_t new_capacity;
                 if (argument == NULL) goto call_error;
@@ -264,7 +279,7 @@ static Expr *parse_call(Parser *parser) {
                 "Feche a chamada com ')'."); goto call_error;
         }
         parser->grouping_depth--;
-        span.start = callee->span.start; span.end = right->span.end;
+        span.start = callee->span.start; span.end = right->span.end; span.source = callee->span.source;
         {
             Expr *call = expr_new_call(callee, arguments, count, span);
             if (call == NULL) { parser_memory_error(parser, span); goto call_error_without_callee; }
@@ -283,8 +298,15 @@ static Expr *parse_unary(Parser *parser) {
     static const TokenType operators[] = {TOKEN_MINUS, TOKEN_PLUS, TOKEN_KW_NAO};
     const Token *operator_token;
     if (match_any(parser, operators, sizeof(operators) / sizeof(operators[0]), &operator_token)) {
-        Expr *operand = parse_unary(parser);
+        Expr *operand;
         Expr *expression;
+        if (parser->parse_depth >= LUME_MAX_PARSE_DEPTH) {
+            parser_error(parser, operator_token->span,
+                "A expressao esta aninhada profundamente demais.",
+                "Simplifique a expressao ou divida-a em partes menores.");
+            return NULL;
+        }
+        parser->parse_depth++; operand = parse_unary(parser); parser->parse_depth--;
         if (operand == NULL) return NULL;
         expression = expr_new_unary(unary_operator(operator_token->type), operator_token->span, operand);
         if (expression == NULL) { expr_free(operand); parser_memory_error(parser, operator_token->span); }
@@ -342,7 +364,7 @@ bool parser_parse_expression(const TokenArray *tokens, Expr **out_expr, ErrorLis
     *out_expr = NULL;
     parser.tokens = tokens; parser.errors = errors; parser.current = 0U;
     parser.grouping_depth = 0U; parser.expression_only = true;
-    parser.failed = false; parser.function_depth = 0U;
+    parser.failed = false; parser.function_depth = 0U; parser.block_depth = 0U; parser.parse_depth = 0U;
     skip_newlines(&parser);
     expression = parse_or(&parser);
     if (expression == NULL) return false;
@@ -404,6 +426,7 @@ static Stmt *parse_declaration(Parser *parser, bool mutable, const Token *keywor
         expr_free(initializer); parser_memory_error(parser, keyword->span); return NULL;
     }
     statement->span.start = keyword->span.start;
+    statement->span.source = keyword->span.source;
     return statement;
 }
 static Stmt *parse_required_block(Parser *parser, const char *context) {
@@ -444,6 +467,7 @@ static Stmt *parse_if_statement(Parser *parser, const Token *keyword) {
     }
     span.start = keyword->span.start;
     span.end = else_branch != NULL ? else_branch->span.end : then_branch->span.end;
+    span.source = keyword->span.source;
     statement = stmt_new_if(condition, then_branch, else_branch, span);
     if (statement == NULL) {
         expr_free(condition); stmt_free(then_branch); stmt_free(else_branch);
@@ -459,7 +483,7 @@ static Stmt *parse_while_statement(Parser *parser, const Token *keyword) {
     if (condition == NULL) return NULL;
     body = parse_required_block(parser, "Use: enquanto condicao { instrucoes }.");
     if (body == NULL) { expr_free(condition); return NULL; }
-    span.start = keyword->span.start; span.end = body->span.end;
+    span.start = keyword->span.start; span.end = body->span.end; span.source = keyword->span.source;
     statement = stmt_new_while(condition, body, span);
     if (statement == NULL) {
         expr_free(condition); stmt_free(body); parser_memory_error(parser, span);
@@ -491,7 +515,7 @@ static Stmt *parse_for_statement(Parser *parser, const Token *keyword) {
     if (end == NULL) { expr_free(start); return NULL; }
     body = parse_required_block(parser, "Use: para i de inicio ate fim { instrucoes }.");
     if (body == NULL) { expr_free(start); expr_free(end); return NULL; }
-    span.start = keyword->span.start; span.end = body->span.end;
+    span.start = keyword->span.start; span.end = body->span.end; span.source = keyword->span.source;
     statement = stmt_new_for(token_lexeme(name), token_length(name), name->span,
         start, end, body, span);
     if (statement == NULL) {
@@ -560,7 +584,7 @@ static Stmt *parse_function(Parser *parser, const Token *keyword) {
     body = parse_block(parser, left);
     parser->function_depth--;
     if (body == NULL) goto parameter_error;
-    span.start = keyword->span.start; span.end = body->span.end;
+    span.start = keyword->span.start; span.end = body->span.end; span.source = keyword->span.source;
     statement = stmt_new_function(token_lexeme(name), token_length(name), name->span,
         names, lengths, spans, count, body, span);
     if (statement == NULL) { stmt_free(body); parser_memory_error(parser, span); goto parameter_error; }
@@ -590,7 +614,7 @@ static Stmt *parse_return(Parser *parser, const Token *keyword) {
         return statement;
     }
 }
-static Stmt *parse_import(Parser *parser,const Token *keyword){const Token *path;Value decoded=value_null();Stmt *statement;SourceSpan span;if(parser->block_depth!=0U||parser->function_depth!=0U){parser_error(parser,keyword->span,"'importe' so pode ser usado no nivel principal do modulo.","Mova o import para o inicio do arquivo.");return NULL;}if(!require_token(parser,TOKEN_STRING,&path,"Era esperado um caminho de modulo depois de 'importe'.","Use: importe \"matematica\"."))return NULL;if(!value_string_decode(token_lexeme(path),token_length(path),&decoded)){parser_memory_error(parser,path->span);return NULL;}span.start=keyword->span.start;span.end=path->span.end;statement=stmt_new_import(decoded.as.string.bytes,decoded.as.string.length,path->span,span);value_free(&decoded);if(statement==NULL)parser_memory_error(parser,span);return statement;}
+static Stmt *parse_import(Parser *parser,const Token *keyword){const Token *path;Value decoded=value_null();Stmt *statement;SourceSpan span;if(parser->block_depth!=0U||parser->function_depth!=0U){parser_error(parser,keyword->span,"'importe' so pode ser usado no nivel principal do modulo.","Mova o import para o inicio do arquivo.");return NULL;}if(!require_token(parser,TOKEN_STRING,&path,"Era esperado um caminho de modulo depois de 'importe'.","Use: importe \"matematica\"."))return NULL;if(!value_string_decode(token_lexeme(path),token_length(path),&decoded)){parser_memory_error(parser,path->span);return NULL;}span.start=keyword->span.start;span.end=path->span.end;span.source=keyword->span.source;statement=stmt_new_import(decoded.as.string.bytes,decoded.as.string.length,path->span,span);value_free(&decoded);if(statement==NULL)parser_memory_error(parser,span);return statement;}
 static Stmt *parse_block(Parser *parser, const Token *left_brace) {
     StmtArray statements = {NULL, 0U, 0U};
     const Token *right_brace;
@@ -614,7 +638,7 @@ static Stmt *parse_block(Parser *parser, const Token *left_brace) {
         parser->block_depth--;stmt_array_free(&statements); return NULL;
     }
     {
-        SourceSpan span = {left_brace->span.start, right_brace->span.end};
+        SourceSpan span = {left_brace->span.start, right_brace->span.end, left_brace->span.source};
         Stmt *block;parser->block_depth--;block = stmt_new_block(statements, span);
         if (block == NULL) { stmt_array_free(&statements); parser_memory_error(parser, span); }
         return block;
@@ -659,7 +683,7 @@ static Stmt *parse_statement(Parser *parser) {
         if (expression == NULL) return NULL;
         if (match_token(parser,TOKEN_EQUAL,NULL)) {
             Expr *value=parse_or(parser); if(value==NULL){expr_free(expression);return NULL;}
-            span.start=expression->span.start;span.end=value->span.end;
+            span.start=expression->span.start;span.end=value->span.end;span.source=expression->span.source;
             if(expression->type==EXPR_IDENTIFIER){statement=stmt_new_assignment(expression->as.identifier.name,expression->as.identifier.length,expression->span,value);expr_free(expression);if(statement==NULL){expr_free(value);parser_memory_error(parser,span);}return statement;}
             if(expression->type==EXPR_INDEX){Expr *target=expression->as.index.target,*index=expression->as.index.index;expression->as.index.target=NULL;expression->as.index.index=NULL;expr_free(expression);statement=stmt_new_index_assignment(target,index,value,span);if(statement==NULL){expr_free(target);expr_free(index);expr_free(value);parser_memory_error(parser,span);}return statement;}
             parser_error(parser,expression->span,"Alvo invalido para atribuicao.","Atribua a uma variavel ou a um indice de lista.");expr_free(expression);expr_free(value);return NULL;
@@ -678,7 +702,7 @@ bool parser_parse_program(const TokenArray *tokens, Program **out_program, Error
     *out_program = NULL;
     parser.tokens = tokens; parser.errors = errors; parser.current = 0U;
     parser.grouping_depth = 0U; parser.expression_only = false;
-    parser.failed = false; parser.function_depth = 0U; parser.block_depth=0U;
+    parser.failed = false; parser.function_depth = 0U; parser.block_depth=0U; parser.parse_depth=0U;
     program = program_new();
     if (program == NULL) {
         parser_memory_error(&parser, fallback_span(&parser)); return false;
