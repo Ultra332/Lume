@@ -39,7 +39,7 @@ static void run_free(Run *run) {
     source_free(&run->source);
 }
 static bool get_integer(Run *run, const char *name, int64_t *out) {
-    SourceSpan span = {{0U, 1U, 1U}, {0U, 1U, 1U}};
+    SourceSpan span = {{0U, 1U, 1U}, {0U, 1U, 1U}, NULL};
     Value value = value_null();
     bool ok = environment_get(&run->environment, name, strlen(name), &value, span, &run->errors);
     if (ok && value.type == VALUE_INTEGER) *out = value.as.integer;

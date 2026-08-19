@@ -65,6 +65,11 @@ precedência (uma por nível da EBNF), uma forma simples e didática de Pratt/pr
 climbing. A tabela poderá migrar para um Pratt parser completo se operadores
 extensíveis justificarem isso. A AST permanece igual em ambos os casos.
 
+Entradas recursivas de expressões são limitadas a 128 níveis. Um único contador
+do `Parser` cobre agrupamentos, listas, índices, argumentos e operadores unários
+aninhados, sendo restaurado antes de cada retorno. O teto fica deliberadamente
+abaixo da pilha real para proteger builds debug em Windows e Linux.
+
 ### Statements e expressions
 
 Expressions produzem valores; statements controlam execução e escopo. Separar
@@ -88,6 +93,11 @@ Tokens guardam a referência à fonte e referenciam fatias por offsets. O objeto
 o fim do uso dos tokens e diagnósticos. A coluna é inicialmente
 medida em bytes UTF-8; a camada de apresentação calculará posição visual quando
 necessário. Isso evita o lexer fingir suporte Unicode completo.
+
+Na v0.1.1, cada `SourceSpan` também mantém um ponteiro emprestado para sua
+`Source`. O renderer usa essa associação em vez de presumir a entrada corrente.
+ASTs de funções do REPL e módulos já retêm suas Sources, garantindo o lifetime
+sem copiar o conteúdo da fonte para cada diagnóstico.
 
 ### Valores
 
@@ -197,6 +207,11 @@ e sair de funções Lume, sem examinar a pilha C. A visualização percorre some
 ambiente ativo recebido no evento e seus pais; frames antigos retidos pela arena
 para closures não aparecem. O renderer limita explicações longas a 200 eventos,
 mas o programa continua sendo executado integralmente.
+
+O interpretador também limita a 200 as chamadas Lume simultâneas. Esse limite é
+separado do corte visual do renderer e existe para impedir que recursão sem caso
+base esgote a pilha C. Ao atingir o teto, o runtime produz um erro educacional no
+span da chamada externa, que continua pertencendo à unidade corrente do REPL.
 
 ### Análise estática educacional
 

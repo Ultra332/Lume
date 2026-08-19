@@ -48,7 +48,16 @@ execução, verificação sem efeitos e lockfile transitivo determinístico.
 temporários, tempo, erros, analyzer, projetos, REPL, namespace reservado,
 compatibilidade de nativas e ausência no lockfile.
 
-Execute as quinze suítes na raiz com `make test`.
+`test_stability.c` reúne regressões e limites de uso comum: entradas vazias e
+incompletas, diagnósticos léxicos/sintáticos, erros numéricos, de tipo e índice,
+listas maiores, textos longos, muitas declarações e análise de uma AST maior sem
+executá-la. Também cobre a fronteira de 128 níveis do parser, a primeira entrada
+recusada e o caminho de `--analisar` sem crash.
+
+`test_repl.c` também verifica diagnósticos associados a Sources antigas para
+erros de nome, tipo, índice e closures, seguidos por execução válida na sessão.
+
+Execute as dezesseis suítes na raiz com `make test`.
 
 Na integração contínua, o mesmo alvo é executado em Linux com GCC. Antes de uma
 release Windows, `scripts/build-windows.sh` repete o build e todas as suítes

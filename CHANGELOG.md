@@ -2,7 +2,9 @@
 
 Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
-## [Nao lancado]
+## [0.1.1] — 2026-08-19
+
+Atualização de estabilidade compatível com os programas da v0.1.0.
 
 ### Corrigido
 
@@ -13,11 +15,18 @@ Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://k
 - `tests/test_diagnostics.c` passava um comprimento maior que o do literal para
   `source_from_bytes`, causando leitura fora dos limites e abortando `make sanitize`
   antes das ultimas suites.
+- recursao excessiva agora termina com diagnostico da Lume, sem esgotar a pilha C;
+- o diagnostico desse limite usa a entrada corrente do REPL, preservando linha e marcador.
+- expressoes aninhadas alem de 128 niveis agora produzem erro sintatico controlado;
+- diagnosticos do REPL agora conservam a Source correta entre entradas;
+- declaracoes POSIX de `localtime_r` e `nanosleep` ficam visiveis no build Linux.
 
 ### Adicionado
 
 - teste de regressao que exibe o diagnostico depois da liberacao da AST;
 - job de CI que executa `make sanitize` (AddressSanitizer + UBSan).
+- suite de estabilidade para entradas incompletas, limites de runtime e programas maiores.
+- testes de fronteira do parser e diagnosticos cross-Source de nome, tipo, indice e closure.
 
 ## [0.1.0] — 2026-08-18
 

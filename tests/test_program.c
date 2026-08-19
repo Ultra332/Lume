@@ -28,7 +28,7 @@ static void run_free(Run *run) {
     error_list_free(&run->errors); token_array_free(&run->tokens); source_free(&run->source);
 }
 static bool get_value(Run *run, const char *name, Value *out) {
-    SourceSpan span = {{0U, 1U, 1U}, {0U, 1U, 1U}};
+    SourceSpan span = {{0U, 1U, 1U}, {0U, 1U, 1U}, NULL};
     return environment_get(&run->environment, name, strlen(name), out, span, &run->errors);
 }
 static void expect_integer(const char *program, const char *name, int64_t expected) {

@@ -1,5 +1,5 @@
 #define MyAppName "Lume"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.1.1"
 #define MyAppExeName "lume.exe"
 
 [Setup]
@@ -12,7 +12,7 @@ DefaultGroupName=Lume
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=..\dist
-OutputBaseFilename=Lume-0.1.0-Windows-x64-Setup
+OutputBaseFilename=Lume-0.1.1-Windows-x64-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -97,4 +97,3 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usUninstall then RemoveFromUserPath(ExpandConstant('{app}'));
 end;
-

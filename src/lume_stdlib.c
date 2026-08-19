@@ -1,3 +1,6 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
 #include "lume_stdlib.h"
 #include <ctype.h>
 #include <math.h>

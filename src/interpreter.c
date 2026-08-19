@@ -10,6 +10,11 @@
 #include "list.h"
 #include "module.h"
 
+/* Uma chamada Lume usa varios frames C no interpretador recursivo. Este teto
+   deixa margem para builds sem otimizacao e transforma recursao descontrolada
+   em um diagnostico da linguagem. */
+#define LUME_MAX_CALL_DEPTH 200U
+
 static bool report(ErrorList *errors, LumeErrorKind kind, SourceSpan span,
                    const char *message, const char *suggestion) {
     LumeError error;
@@ -104,7 +109,7 @@ static bool values_equal(const Value *left, const Value *right) {
     return false;
 }
 
-typedef struct { RuntimeIO *io; RuntimeTrace *trace; size_t call_depth; ModuleRegistry *registry; LumeModule *module; } Runtime;
+typedef struct { RuntimeIO *io; RuntimeTrace *trace; size_t call_depth; SourceSpan outer_call_span; ModuleRegistry *registry; LumeModule *module; } Runtime;
 typedef enum { EXEC_OK, EXEC_ERROR, EXEC_RETURN } ExecStatus;
 typedef struct { ExecStatus status; Value value; } ExecutionResult;
 static ExecutionResult execute_statements(const StmtArray *, Environment *, Runtime *, ErrorList *);
@@ -377,6 +382,11 @@ decimal_error:
                     declaration->as.function.parameter_lengths[index], &arguments[index], true,
                     declaration->as.function.parameter_spans[index], errors)) return false;
         }
+        if (runtime->call_depth >= LUME_MAX_CALL_DEPTH)
+            return fail(errors, runtime->outer_call_span,
+                "Limite de chamadas de funcao atingido.",
+                "Isso pode indicar recursao sem um caso base alcancavel. Confira as condicoes que encerram as chamadas.");
+        if (runtime->call_depth == 0U) runtime->outer_call_span = span;
         runtime->call_depth++;
         { TraceEvent enter_event=trace_event(TRACE_FUNCTION_ENTER,span,call_environment);enter_event.name=callable->name;enter_event.name_length=strlen(callable->name);emit(runtime,enter_event); }
         result = execute_statements(&declaration->as.function.body->as.block.statements,
@@ -683,7 +693,7 @@ static ExecutionResult execute_statements(const StmtArray *statements, Environme
 }
 static bool install_native(Environment *environment, CallableType type, const char *name,
                            size_t length, size_t arity, ErrorList *errors) {
-    SourceSpan span = {{0U, 1U, 1U}, {0U, 1U, 1U}};
+    SourceSpan span = {{0U, 1U, 1U}, {0U, 1U, 1U}, NULL};
     Callable *callable;
     Value value;
     if (environment_has_current(environment, name, length)) return true;
@@ -715,9 +725,9 @@ bool interpreter_execute_program_with_modules(const Program *program,Environment
         !install_native(environment, CALLABLE_NATIVE_LENGTH, "tamanho", 7U, 1U, errors) ||
         !install_native(environment, CALLABLE_NATIVE_APPEND, "adicione", 8U, 2U, errors) ||
         !install_native(environment, CALLABLE_NATIVE_REMOVE, "remova", 6U, 2U, errors)) return false;
-    {TraceEvent event=trace_event(TRACE_PROGRAM_START,(SourceSpan){{0U,1U,1U},{0U,1U,1U}},environment);emit(&runtime,event);}
+    {TraceEvent event=trace_event(TRACE_PROGRAM_START,(SourceSpan){{0U,1U,1U},{0U,1U,1U},NULL},environment);emit(&runtime,event);}
     result = execute_statements(&program->statements, environment, &runtime, errors);
-    if (trace == NULL || !trace->stop_requested) {TraceEvent event=trace_event(TRACE_PROGRAM_END,(SourceSpan){{0U,1U,1U},{0U,1U,1U}},environment);emit(&runtime,event);}
+    if (trace == NULL || !trace->stop_requested) {TraceEvent event=trace_event(TRACE_PROGRAM_END,(SourceSpan){{0U,1U,1U},{0U,1U,1U},NULL},environment);emit(&runtime,event);}
     value_free(&result.value);
     return result.status == EXEC_OK;
 }

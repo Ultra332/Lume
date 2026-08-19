@@ -24,7 +24,7 @@ static void run_free(Run *run) {
     token_array_free(&run->tokens); source_free(&run->source);
 }
 static bool integer(Run *run, const char *name, int64_t expected) {
-    SourceSpan span = {{0U,1U,1U},{0U,1U,1U}}; Value value = value_null();
+    SourceSpan span = {{0U,1U,1U},{0U,1U,1U},NULL}; Value value = value_null();
     bool ok = environment_get(&run->environment, name, strlen(name), &value, span, &run->errors);
     ok = ok && value.type == VALUE_INTEGER && value.as.integer == expected; value_free(&value); return ok;
 }
@@ -68,9 +68,26 @@ static void test_errors(void) {
     expect_error("funcao f(){ retorne inexistente }\nf()\n");
     expect_error("funcao escreva(){ }\n");
 }
+static void expect_depth_error(const char *text) {
+    Run run = run_text(text);
+    CHECK(!run.ok); CHECK(run.errors.count == 1U);
+    if (run.errors.count == 1U) {
+        CHECK(run.errors.data[0].kind == LUME_ERROR_RUNTIME);
+        CHECK(strstr(run.errors.data[0].message, "Limite de chamadas") != NULL);
+        CHECK(run.errors.data[0].suggestion != NULL);
+        CHECK(strstr(run.errors.data[0].suggestion, "caso base") != NULL);
+    }
+    run_free(&run);
+}
+static void test_recursion_depth(void) {
+    expect_depth_error("funcao g(){ retorne g() }\ng()\n");
+    expect_depth_error("funcao a(){ retorne b() }\nfuncao b(){ retorne a() }\na()\n");
+    expect_integer("funcao f(n){ se n==0 { retorne 0 }; retorne f(n-1) }\nvariavel r=f(199)\n", "r", 0);
+    expect_depth_error("funcao f(n){ se n==0 { retorne 0 }; retorne f(n-1) }\nf(200)\n");
+}
 int main(void) {
     test_basics(); test_recursion_and_hoisting(); test_closures(); test_values_calls_and_return_flow();
-    test_native_output(); test_errors();
+    test_native_output(); test_errors(); test_recursion_depth();
     if (failures == 0) { puts("Todos os testes de funcoes passaram."); return 0; }
     fprintf(stderr, "%d teste(s) falharam.\n", failures); return 1;
 }

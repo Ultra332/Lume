@@ -1,4 +1,4 @@
-Lume 0.1.0 - Windows x64
+Lume 0.1.1 - Windows x64
 ================================
 
 Este é o pacote portátil da linguagem de programação educacional Lume.
@@ -21,4 +21,3 @@ instalador oficial.
 
 Documentação: https://github.com/Ultra332/Lume
 Licença: Apache-2.0; consulte o arquivo LICENSE incluído.
-

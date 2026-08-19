@@ -5,13 +5,13 @@
 </p>
 
 [![CI](https://github.com/Ultra332/Lume/actions/workflows/ci.yml/badge.svg)](https://github.com/Ultra332/Lume/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/Ultra332/Lume?label=release)]([https://github.com/Ultra332/Lume/releases](https://github.com/Ultra332/Lume/releases/tag/v0.1.0))
+[![Release](https://img.shields.io/github/v/release/Ultra332/Lume?label=release)](https://github.com/Ultra332/Lume/releases)
 [![License](https://img.shields.io/github/license/Ultra332/Lume)](LICENSE)
 [![C11](https://img.shields.io/badge/C-11-blue.svg)](https://en.wikipedia.org/wiki/C11_(C_standard_revision))
 
 Lume é uma linguagem de programação educacional em português, pequena o bastante para ser estudada e completa o bastante para ensinar programas reais. A implementação de referência é escrita em C11 e inclui interpretador, REPL, análise estática, módulos, projetos reproduzíveis e uma biblioteca padrão organizada.
 
-> Estado: **v0.1.0 candidata à primeira release pública**. A linguagem é utilizável, mas ainda está em evolução e pode receber mudanças incompatíveis antes da versão 1.0.
+> Estado: **Lume v0.1.1 — atualização de estabilidade da versão pública experimental**. A linguagem é utilizável, mas ainda está em evolução e pode receber mudanças incompatíveis antes da versão 1.0.
 
 ## Um primeiro programa
 
@@ -44,7 +44,7 @@ A referência da sintaxe e semântica está em [LANGUAGE.md](LANGUAGE.md). Se es
 
 ### Windows
 
-1. Baixe `Lume-0.1.0-Windows-x64-Setup.exe` na página de releases.
+1. Baixe `Lume-0.1.1-Windows-x64-Setup.exe` na página de releases.
 2. Execute o instalador e conclua as etapas apresentadas.
 3. Abra um novo PowerShell, CMD ou terminal do VS Code.
 4. Verifique:
@@ -58,7 +58,7 @@ Make, MSYS2 ou o código-fonte.
 
 ### Versão portátil
 
-Baixe `Lume-0.1.0-Windows-x64.zip`, extraia todo o conteúdo e execute
+Baixe `Lume-0.1.1-Windows-x64.zip`, extraia todo o conteúdo e execute
 `lume.exe`. O ZIP não modifica o sistema; para chamar `lume` de qualquer pasta,
 adicione manualmente a pasta extraída ao `PATH`.
 
