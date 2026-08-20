@@ -16,6 +16,7 @@ struct Parser {
     bool expression_only;
     bool failed;
     size_t function_depth;
+    size_t loop_depth;
     size_t block_depth;
     size_t parse_depth;
 };
@@ -156,7 +157,7 @@ static Expr *parse_primary(Parser *parser) {
         token->type == TOKEN_KW_VERDADEIRO || token->type == TOKEN_KW_FALSO || token->type == TOKEN_KW_NULO) {
         parser->current++;
         if (token->type == TOKEN_INTEGER && !parse_integer_value(token, &value)) {
-            parser_error(parser, token->span, "Inteiro fora do limite suportado.", "A Lume 0.1 aceita inteiros de ate 64 bits com sinal.");
+            parser_error(parser, token->span, "Inteiro fora do limite suportado.", "A Lume aceita inteiros de ate 64 bits com sinal.");
             return NULL;
         }
         if (token->type == TOKEN_DECIMAL && !parse_decimal_value(token, &value)) {
@@ -481,7 +482,9 @@ static Stmt *parse_while_statement(Parser *parser, const Token *keyword) {
     Stmt *statement;
     SourceSpan span;
     if (condition == NULL) return NULL;
+    parser->loop_depth++;
     body = parse_required_block(parser, "Use: enquanto condicao { instrucoes }.");
+    parser->loop_depth--;
     if (body == NULL) { expr_free(condition); return NULL; }
     span.start = keyword->span.start; span.end = body->span.end; span.source = keyword->span.source;
     statement = stmt_new_while(condition, body, span);
@@ -501,9 +504,24 @@ static Stmt *parse_for_statement(Parser *parser, const Token *keyword) {
     if (!require_token(parser, TOKEN_IDENTIFIER, &name,
             "Era esperado o nome do iterador depois de 'para'.",
             "Use: para i de 1 ate 5 { instrucoes }.")) return NULL;
+    if (match_token(parser, TOKEN_KW_EM, &ignored)) {
+        Expr *iterable = parse_or(parser);
+        if (iterable == NULL) return NULL;
+        parser->loop_depth++;
+        body = parse_required_block(parser, "Use: para item em lista { instrucoes }.");
+        parser->loop_depth--;
+        if (body == NULL) { expr_free(iterable); return NULL; }
+        span.start = keyword->span.start; span.end = body->span.end; span.source = keyword->span.source;
+        statement = stmt_new_for_each(token_lexeme(name), token_length(name), name->span,
+            iterable, body, span);
+        if (statement == NULL) {
+            expr_free(iterable); stmt_free(body); parser_memory_error(parser, span);
+        }
+        return statement;
+    }
     if (!require_token(parser, TOKEN_KW_DE, &ignored,
-            "Era esperada a palavra 'de' depois do iterador.",
-            "Use: para i de 1 ate 5 { instrucoes }.")) return NULL;
+            "Era esperada a palavra 'de' ou 'em' depois do iterador.",
+            "Use: para i de 1 ate 5 { ... } ou para item em lista { ... }.")) return NULL;
     start = parse_or(parser);
     if (start == NULL) return NULL;
     if (!require_token(parser, TOKEN_KW_ATE, &ignored,
@@ -513,7 +531,9 @@ static Stmt *parse_for_statement(Parser *parser, const Token *keyword) {
     }
     end = parse_or(parser);
     if (end == NULL) { expr_free(start); return NULL; }
+    parser->loop_depth++;
     body = parse_required_block(parser, "Use: para i de inicio ate fim { instrucoes }.");
+    parser->loop_depth--;
     if (body == NULL) { expr_free(start); expr_free(end); return NULL; }
     span.start = keyword->span.start; span.end = body->span.end; span.source = keyword->span.source;
     statement = stmt_new_for(token_lexeme(name), token_length(name), name->span,
@@ -580,9 +600,14 @@ static Stmt *parse_function(Parser *parser, const Token *keyword) {
         parser_error(parser, fallback_span(parser), "Era esperado o corpo da funcao entre '{' e '}'.",
             "Adicione um bloco depois da assinatura."); goto parameter_error;
     }
+    {
+    size_t outer_loop_depth = parser->loop_depth;
+    parser->loop_depth = 0U;
     parser->function_depth++;
     body = parse_block(parser, left);
     parser->function_depth--;
+    parser->loop_depth = outer_loop_depth;
+    }
     if (body == NULL) goto parameter_error;
     span.start = keyword->span.start; span.end = body->span.end; span.source = keyword->span.source;
     statement = stmt_new_function(token_lexeme(name), token_length(name), name->span,
@@ -613,6 +638,18 @@ static Stmt *parse_return(Parser *parser, const Token *keyword) {
         if (statement == NULL) { expr_free(value); parser_memory_error(parser, span); }
         return statement;
     }
+}
+static Stmt *parse_loop_control(Parser *parser, const Token *keyword, bool is_break) {
+    Stmt *statement;
+    if (parser->loop_depth == 0U) {
+        parser_error(parser, keyword->span,
+            is_break ? "'pare' so pode ser usado dentro de um laco." : "'continue' so pode ser usado dentro de um laco.",
+            is_break ? "Coloque 'pare' dentro de 'enquanto' ou 'para'." : "Coloque 'continue' dentro de 'enquanto' ou 'para'.");
+        return NULL;
+    }
+    statement = stmt_new_loop_control(is_break, keyword->span);
+    if (statement == NULL) parser_memory_error(parser, keyword->span);
+    return statement;
 }
 static Stmt *parse_import(Parser *parser,const Token *keyword){const Token *path;Value decoded=value_null();Stmt *statement;SourceSpan span;if(parser->block_depth!=0U||parser->function_depth!=0U){parser_error(parser,keyword->span,"'importe' so pode ser usado no nivel principal do modulo.","Mova o import para o inicio do arquivo.");return NULL;}if(!require_token(parser,TOKEN_STRING,&path,"Era esperado um caminho de modulo depois de 'importe'.","Use: importe \"matematica\"."))return NULL;if(!value_string_decode(token_lexeme(path),token_length(path),&decoded)){parser_memory_error(parser,path->span);return NULL;}span.start=keyword->span.start;span.end=path->span.end;span.source=keyword->span.source;statement=stmt_new_import(decoded.as.string.bytes,decoded.as.string.length,path->span,span);value_free(&decoded);if(statement==NULL)parser_memory_error(parser,span);return statement;}
 static Stmt *parse_block(Parser *parser, const Token *left_brace) {
@@ -655,6 +692,8 @@ static Stmt *parse_statement(Parser *parser) {
     }
     if (token->type == TOKEN_KW_FUNCAO) { parser->current++; return parse_function(parser, token); }
     if (token->type == TOKEN_KW_RETORNE) { parser->current++; return parse_return(parser, token); }
+    if (token->type == TOKEN_KW_PARE) { parser->current++; return parse_loop_control(parser, token, true); }
+    if (token->type == TOKEN_KW_CONTINUE) { parser->current++; return parse_loop_control(parser, token, false); }
     if (token->type == TOKEN_KW_SE) {
         parser->current++;
         return parse_if_statement(parser, token);
@@ -702,7 +741,8 @@ bool parser_parse_program(const TokenArray *tokens, Program **out_program, Error
     *out_program = NULL;
     parser.tokens = tokens; parser.errors = errors; parser.current = 0U;
     parser.grouping_depth = 0U; parser.expression_only = false;
-    parser.failed = false; parser.function_depth = 0U; parser.block_depth=0U; parser.parse_depth=0U;
+    parser.failed = false; parser.function_depth = 0U; parser.loop_depth = 0U;
+    parser.block_depth=0U; parser.parse_depth=0U;
     program = program_new();
     if (program == NULL) {
         parser_memory_error(&parser, fallback_span(&parser)); return false;

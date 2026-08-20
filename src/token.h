@@ -13,7 +13,8 @@ typedef enum {
     TOKEN_KW_SE, TOKEN_KW_SENAO, TOKEN_KW_ENQUANTO, TOKEN_KW_PARA, TOKEN_KW_DE,
     TOKEN_KW_ATE, TOKEN_KW_FUNCAO, TOKEN_KW_RETORNE, TOKEN_KW_VERDADEIRO,
     TOKEN_KW_FALSO, TOKEN_KW_NULO, TOKEN_KW_E, TOKEN_KW_OU, TOKEN_KW_NAO,
-    TOKEN_KW_IMPORTE, TOKEN_KW_EXPORTE
+    TOKEN_KW_IMPORTE, TOKEN_KW_EXPORTE, TOKEN_KW_EM, TOKEN_KW_PARE,
+    TOKEN_KW_CONTINUE
 } TokenType;
 /* Lexeme is source->bytes + span.start.offset; Source must outlive this token. */
 typedef struct { TokenType type; const Source *source; SourceSpan span; } Token;

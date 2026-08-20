@@ -1,0 +1,6 @@
+// Percorre valores diretamente, sem precisar controlar indices.
+variavel nomes = ["Ana", "Bia", "Caio"]
+
+para nome em nomes {
+    escreva(nome)
+}

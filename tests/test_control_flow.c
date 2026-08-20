@@ -154,6 +154,54 @@ static void test_type_errors(void) {
     expect_error("para i de 1.5 ate 5 {\n}\n");
     expect_error("para i de 1 ate verdadeiro {\n}\n");
 }
+static void test_collection_for_and_loop_control(void) {
+    expect_integer("variavel total = 0\npara item em [] { total = total + 1 }\n", "total", 0);
+    expect_integer("variavel total = 0\npara item em [9] { total = total + item }\n", "total", 9);
+    expect_integer(
+        "variavel soma = 0\npara numero em [1, 2, 3, 4] {\n soma = soma + numero\n}\n",
+        "soma", 10);
+    expect_integer(
+        "variavel soma = 0\npara numero em [1, 2, 3, 4] {\n"
+        " se numero == 2 { continue }\n se numero == 4 { pare }\n soma = soma + numero\n}\n",
+        "soma", 4);
+    expect_integer(
+        "variavel i = 0\nvariavel soma = 0\nenquanto verdadeiro {\n i = i + 1\n"
+        " se i == 2 { continue }\n se i == 4 { pare }\n soma = soma + i\n}\n",
+        "soma", 4);
+    expect_integer(
+        "variavel itens = [1, 2, 3]\nvariavel vezes = 0\npara item em itens {\n"
+        " adicione(itens, 9)\n vezes = vezes + 1\n}\n",
+        "vezes", 3);
+    expect_integer(
+        "variavel total = 0\npara linha em [[1, 2], [3]] {\n"
+        " para item em linha { total = total + item }\n}\n",
+        "total", 6);
+    expect_integer(
+        "variavel total = 0\npara i de 1 ate 3 {\n para j de 1 ate 5 {\n"
+        "  se j == 3 { pare }\n  total = total + 1\n }\n}\n",
+        "total", 6);
+    expect_integer(
+        "funcao numeros() { retorne [2, 4, 6] }\nvariavel total = 0\n"
+        "para item em numeros() { total = total + item }\n",
+        "total", 12);
+    expect_integer(
+        "funcao fabrica() { variavel dados = [5, 7]; funcao obter() { retorne dados }; retorne obter }\n"
+        "variavel obter = fabrica()\nvariavel total = 0\npara item em obter() { total = total + item }\n",
+        "total", 12);
+    expect_integer(
+        "variavel item = 40\npara item em [1, 2] { variavel copia = item }\n"
+        "variavel resultado = item\n",
+        "resultado", 40);
+    expect_integer(
+        "variavel total = 0\npara rodada de 1 ate 10000 {\n"
+        " para item em [1, 2, 3] { total = total + item }\n}\n",
+        "total", 60000);
+    expect_error("para item em 10 { }\n");
+    expect_error("pare\n");
+    expect_error("continue\n");
+    expect_error("para item em [1] { funcao f() { pare } }\n");
+    expect_error("para item em { }\n");
+}
 static void test_syntax_errors(void) {
     expect_error("se {\n}\n");
     expect_error("se verdadeiro\n");
@@ -184,6 +232,7 @@ int main(void) {
     test_if();
     test_while();
     test_for();
+    test_collection_for_and_loop_control();
     test_type_errors();
     test_syntax_errors();
     test_ast_types();

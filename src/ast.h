@@ -39,8 +39,9 @@ void expr_free(Expr *expression);
 
 typedef enum {
     STMT_EXPRESSION, STMT_VARIABLE_DECLARATION, STMT_CONSTANT_DECLARATION,
-    STMT_ASSIGNMENT, STMT_BLOCK, STMT_IF, STMT_WHILE, STMT_FOR,
-    STMT_FUNCTION, STMT_RETURN, STMT_INDEX_ASSIGNMENT, STMT_IMPORT
+    STMT_ASSIGNMENT, STMT_BLOCK, STMT_IF, STMT_WHILE, STMT_FOR, STMT_FOR_EACH,
+    STMT_BREAK, STMT_CONTINUE, STMT_FUNCTION, STMT_RETURN,
+    STMT_INDEX_ASSIGNMENT, STMT_IMPORT
 } StmtType;
 typedef struct Stmt Stmt;
 typedef struct { Stmt **data; size_t count; size_t capacity; } StmtArray;
@@ -63,6 +64,13 @@ struct Stmt {
             Expr *end;
             Stmt *body;
         } for_statement;
+        struct {
+            char *iterator_name;
+            size_t iterator_length;
+            SourceSpan iterator_span;
+            Expr *iterable;
+            Stmt *body;
+        } for_each_statement;
         struct {
             char *name; size_t name_length; SourceSpan name_span;
             char **parameters; size_t *parameter_lengths; SourceSpan *parameter_spans;
@@ -89,6 +97,9 @@ Stmt *stmt_new_if(Expr *condition, Stmt *then_branch, Stmt *else_branch, SourceS
 Stmt *stmt_new_while(Expr *condition, Stmt *body, SourceSpan span);
 Stmt *stmt_new_for(const char *name, size_t name_length, SourceSpan name_span,
                    Expr *start, Expr *end, Stmt *body, SourceSpan span);
+Stmt *stmt_new_for_each(const char *name, size_t name_length, SourceSpan name_span,
+                        Expr *iterable, Stmt *body, SourceSpan span);
+Stmt *stmt_new_loop_control(bool is_break, SourceSpan span);
 Stmt *stmt_new_function(const char *name, size_t name_length, SourceSpan name_span,
                         char **parameters, size_t *parameter_lengths,
                         SourceSpan *parameter_spans, size_t parameter_count,

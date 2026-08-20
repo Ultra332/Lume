@@ -110,7 +110,7 @@ static bool values_equal(const Value *left, const Value *right) {
 }
 
 typedef struct { RuntimeIO *io; RuntimeTrace *trace; size_t call_depth; SourceSpan outer_call_span; ModuleRegistry *registry; LumeModule *module; } Runtime;
-typedef enum { EXEC_OK, EXEC_ERROR, EXEC_RETURN } ExecStatus;
+typedef enum { EXEC_OK, EXEC_ERROR, EXEC_RETURN, EXEC_BREAK, EXEC_CONTINUE } ExecStatus;
 typedef struct { ExecStatus status; Value value; } ExecutionResult;
 static ExecutionResult execute_statements(const StmtArray *, Environment *, Runtime *, ErrorList *);
 static void emit(Runtime *runtime, TraceEvent event) {
@@ -261,7 +261,8 @@ static bool call_callable(Callable *callable, Value *arguments, size_t count,
                           Environment *environment, Runtime *runtime,
                           Value *out, SourceSpan span, ErrorList *errors) {
     size_t index;
-    if (count != callable->arity)
+    if ((callable->type == CALLABLE_NATIVE_READ && count > 1U) ||
+        (callable->type != CALLABLE_NATIVE_READ && count != callable->arity))
         return fail_kind(errors, LUME_ERROR_CALL, span, "Quantidade incorreta de argumentos na chamada.",
             "Confira a quantidade de parametros da funcao.");
     if (callable->type != CALLABLE_USER) {
@@ -278,6 +279,13 @@ static bool call_callable(Callable *callable, Value *arguments, size_t count,
     }
     if (callable->type == CALLABLE_NATIVE_READ) {
         char *bytes = NULL; size_t length = 0U, capacity = 0U; int character;
+        if (count == 1U) {
+            if (arguments[0].type != VALUE_STRING)
+                return fail_type(errors, span, "O texto de convite de 'leia' precisa ser um texto.",
+                    "Use leia(\"Digite um valor: \"), ou leia() sem convite.");
+            fwrite(arguments[0].as.string.bytes, 1U, arguments[0].as.string.length, runtime->io->output);
+            fflush(runtime->io->output);
+        }
         while ((character = fgetc(runtime->io->input)) != EOF && character != '\n') {
             char *grown; size_t new_capacity;
             if (length == capacity) {
@@ -580,6 +588,8 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
                 iteration++; {TraceEvent event=trace_event(TRACE_WHILE_ITERATION,statement->span,environment);event.name="enquanto";event.name_length=8U;event.iteration=iteration;emit(runtime,event);}
                 {
                     ExecutionResult result = execute_statement(statement->as.while_statement.body, environment, runtime, errors);
+                    if (result.status == EXEC_BREAK) return execution(EXEC_OK);
+                    if (result.status == EXEC_CONTINUE) continue;
                     if (result.status != EXEC_OK) return result;
                 }
             }
@@ -620,7 +630,8 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
             for (;;) {
                 iteration++; {TraceEvent event=trace_event(TRACE_FOR_ITERATION,statement->span,loop_environment);Value iterator=value_integer(current);event.name=statement->as.for_statement.iterator_name;event.name_length=statement->as.for_statement.iterator_length;event.iteration=iteration;event.after=&iterator;emit(runtime,event);}
                 ExecutionResult result = execute_statement(statement->as.for_statement.body, loop_environment, runtime, errors);
-                if (result.status != EXEC_OK) {
+                if (result.status == EXEC_BREAK) break;
+                if (result.status != EXEC_OK && result.status != EXEC_CONTINUE) {
                     environment_release_child(loop_environment);
                     return result;
                 }
@@ -639,6 +650,74 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
             }
             {TraceEvent event=trace_event(TRACE_FOR_END,statement->span,environment);event.iteration=iteration;emit(runtime,event);}environment_release_child(loop_environment);return execution(EXEC_OK);
         }
+        case STMT_FOR_EACH: {
+            Value iterable = value_null();
+            Value *items = NULL;
+            size_t count, index, iteration = 0U;
+            Environment *loop_environment;
+            if (!evaluate(statement->as.for_each_statement.iterable, environment, runtime, &iterable, errors))
+                return execution(EXEC_ERROR);
+            if (iterable.type != VALUE_LIST) {
+                value_free(&iterable);
+                (void)fail_type(errors, statement->as.for_each_statement.iterable->span,
+                    "A expressao depois de 'em' precisa produzir uma lista.",
+                    "Use: para item em lista { instrucoes }.");
+                return execution(EXEC_ERROR);
+            }
+            count = iterable.as.list->count;
+            {TraceEvent event=trace_event(TRACE_FOREACH_START,statement->span,environment);event.name=statement->as.for_each_statement.iterator_name;event.name_length=statement->as.for_each_statement.iterator_length;event.after=&iterable;emit(runtime,event);}
+            if (count > 0U) {
+                items = memory_reallocate_array(NULL, count, sizeof(*items));
+                if (items == NULL) { value_free(&iterable); return execution(EXEC_ERROR); }
+                for (index = 0U; index < count; index++) items[index] = value_null();
+                for (index = 0U; index < count; index++) {
+                    if (!list_get(iterable.as.list, index, &items[index])) {
+                        while (index > 0U) value_free(&items[--index]);
+                        memory_free(items); value_free(&iterable); return execution(EXEC_ERROR);
+                    }
+                }
+            }
+            value_free(&iterable);
+            loop_environment = environment_new_child(environment);
+            if (loop_environment == NULL) goto foreach_error;
+            value = count > 0U ? items[0] : value_null();
+            if (!environment_define(loop_environment,
+                    statement->as.for_each_statement.iterator_name,
+                    statement->as.for_each_statement.iterator_length, &value, false,
+                    statement->as.for_each_statement.iterator_span, errors)) {
+                environment_release_child(loop_environment); goto foreach_error;
+            }
+            for (index = 0U; index < count; index++) {
+                ExecutionResult result;
+                if (index > 0U && !environment_set_local_internal(loop_environment,
+                        statement->as.for_each_statement.iterator_name,
+                        statement->as.for_each_statement.iterator_length, &items[index])) {
+                    (void)fail(errors, statement->as.for_each_statement.iterator_span,
+                        "Nao foi possivel atualizar o iterador interno do laco.",
+                        "Isto indica falta de memoria ou erro interno.");
+                    environment_release_child(loop_environment); goto foreach_error;
+                }
+                iteration++;
+                {TraceEvent event=trace_event(TRACE_FOR_ITERATION,statement->span,loop_environment);event.name=statement->as.for_each_statement.iterator_name;event.name_length=statement->as.for_each_statement.iterator_length;event.iteration=iteration;event.after=&items[index];emit(runtime,event);}
+                result = execute_statement(statement->as.for_each_statement.body, loop_environment, runtime, errors);
+                if (result.status == EXEC_BREAK) break;
+                if (result.status != EXEC_OK && result.status != EXEC_CONTINUE) {
+                    size_t cleanup; environment_release_child(loop_environment);
+                    for (cleanup = 0U; cleanup < count; cleanup++) value_free(&items[cleanup]);
+                    memory_free(items); return result;
+                }
+            }
+            environment_release_child(loop_environment);
+            for (index = 0U; index < count; index++) value_free(&items[index]);
+            memory_free(items);
+            {TraceEvent event=trace_event(TRACE_FOREACH_END,statement->span,environment);event.iteration=iteration;emit(runtime,event);}
+            return execution(EXEC_OK);
+foreach_error:
+            for (index = 0U; index < count; index++) value_free(&items[index]);
+            memory_free(items); return execution(EXEC_ERROR);
+        }
+        case STMT_BREAK: {TraceEvent event=trace_event(TRACE_BREAK,statement->span,environment);emit(runtime,event);return execution(EXEC_BREAK);}
+        case STMT_CONTINUE: {TraceEvent event=trace_event(TRACE_CONTINUE,statement->span,environment);emit(runtime,event);return execution(EXEC_CONTINUE);}
         case STMT_FUNCTION: return execution(EXEC_OK);
         case STMT_RETURN: {
             ExecutionResult result = execution(EXEC_RETURN);

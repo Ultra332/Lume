@@ -42,9 +42,10 @@ static void test_keywords(void) {
         TOKEN_KW_VARIAVEL, TOKEN_KW_CONSTANTE, TOKEN_KW_SE, TOKEN_KW_SENAO,
         TOKEN_KW_ENQUANTO, TOKEN_KW_PARA, TOKEN_KW_DE, TOKEN_KW_ATE,
         TOKEN_KW_FUNCAO, TOKEN_KW_RETORNE, TOKEN_KW_VERDADEIRO, TOKEN_KW_FALSO,
-        TOKEN_KW_NULO, TOKEN_KW_E, TOKEN_KW_OU, TOKEN_KW_NAO, TOKEN_EOF
+        TOKEN_KW_NULO, TOKEN_KW_E, TOKEN_KW_OU, TOKEN_KW_NAO, TOKEN_KW_IMPORTE,
+        TOKEN_KW_EXPORTE, TOKEN_KW_EM, TOKEN_KW_PARE, TOKEN_KW_CONTINUE, TOKEN_EOF
     };
-    expect_types("variavel constante se senao enquanto para de ate funcao retorne verdadeiro falso nulo e ou nao",
+    expect_types("variavel constante se senao enquanto para de ate funcao retorne verdadeiro falso nulo e ou nao importe exporte em pare continue",
         types, sizeof(types) / sizeof(types[0]));
 }
 static void test_symbols(void) {

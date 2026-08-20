@@ -14,6 +14,7 @@ static bool statement_has_function(const Stmt *statement) {
             statement_has_function(statement->as.if_statement.else_branch);
     if (statement->type == STMT_WHILE) return statement_has_function(statement->as.while_statement.body);
     if (statement->type == STMT_FOR) return statement_has_function(statement->as.for_statement.body);
+    if (statement->type == STMT_FOR_EACH) return statement_has_function(statement->as.for_each_statement.body);
     return false;
 }
 static bool program_has_function(const Program *program) {

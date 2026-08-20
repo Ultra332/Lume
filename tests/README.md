@@ -57,12 +57,18 @@ milhares de atribuições, blocos, chamadas, listas e textos e confirmam que nen
 ambiente temporário fica na arena. Uma closure que escapa confirma o caso oposto:
 seu ambiente precisa e continua sendo preservado.
 
+`test_v020.c` cobre `leia` com e sem convite, validação de aridade/tipo, os
+módulos `lume/aleatorio` e `lume/terminal`, intervalos aleatórios, lista vazia,
+sequências ANSI, tamanho e leitura de tecla com `RuntimeIO` simulado.
+`test_control_flow.c` também cobre `para ... em`, fotografia diante de mutação,
+`pare`, `continue`, laços aninhados e usos inválidos fora de repetição.
+
 `test_repl.c` também verifica diagnósticos associados a Sources antigas para
 erros de nome, tipo, índice e closures, seguidos por execução válida na sessão.
 Execuções repetidas de blocos e imports validam que REPL e módulos não acumulam
 ambientes transitórios entre unidades.
 
-Execute as dezesseis suítes na raiz com `make test`.
+Execute as dezessete suítes na raiz com `make test`.
 
 Na integração contínua, o mesmo alvo é executado em Linux com GCC. Antes de uma
 release Windows, `scripts/build-windows.sh` repete o build e todas as suítes

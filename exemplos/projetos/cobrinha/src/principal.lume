@@ -1,0 +1,102 @@
+importe "lume/aleatorio"
+importe "lume/terminal"
+importe "lume/tempo"
+
+constante LARGURA = 30
+constante ALTURA = 16
+
+funcao ocupa(cobra, x, y) {
+    para parte em cobra {
+        se parte[0] == x e parte[1] == y {
+            retorne verdadeiro
+        }
+    }
+    retorne falso
+}
+
+funcao nova_comida(cobra) {
+    variavel x = aleatorio.inteiro(1, LARGURA)
+    variavel y = aleatorio.inteiro(1, ALTURA)
+    enquanto ocupa(cobra, x, y) {
+        x = aleatorio.inteiro(1, LARGURA)
+        y = aleatorio.inteiro(1, ALTURA)
+    }
+    retorne [x, y]
+}
+
+funcao desenhe(cobra, comida, pontos) {
+    terminal.limpe()
+    para x de 0 ate LARGURA + 1 {
+        terminal.posicione(x + 1, 1)
+        escreva("#")
+        terminal.posicione(x + 1, ALTURA + 2)
+        escreva("#")
+    }
+    para y de 1 ate ALTURA {
+        terminal.posicione(1, y + 1)
+        escreva("#")
+        terminal.posicione(LARGURA + 2, y + 1)
+        escreva("#")
+    }
+    terminal.posicione(comida[0] + 1, comida[1] + 1)
+    escreva("*")
+    para parte em cobra {
+        terminal.posicione(parte[0] + 1, parte[1] + 1)
+        escreva("o")
+    }
+    variavel cabeca = cobra[tamanho(cobra) - 1]
+    terminal.posicione(cabeca[0] + 1, cabeca[1] + 1)
+    escreva("@")
+    terminal.posicione(1, ALTURA + 4)
+    escreva("Pontos: " + texto(pontos) + "  |  WASD move, Q sai")
+}
+
+variavel cobra = [[5, 8], [6, 8], [7, 8]]
+variavel comida = nova_comida(cobra)
+variavel dx = 1
+variavel dy = 0
+variavel pontos = 0
+variavel jogando = verdadeiro
+
+terminal.oculte_cursor()
+enquanto jogando {
+    desenhe(cobra, comida, pontos)
+    variavel tecla = terminal.tecla()
+    se tecla == "w" e dy != 1 {
+        dx = 0
+        dy = -1
+    } senao se tecla == "s" e dy != -1 {
+        dx = 0
+        dy = 1
+    } senao se tecla == "a" e dx != 1 {
+        dx = -1
+        dy = 0
+    } senao se tecla == "d" e dx != -1 {
+        dx = 1
+        dy = 0
+    } senao se tecla == "q" {
+        pare
+    }
+
+    variavel cabeca = cobra[tamanho(cobra) - 1]
+    variavel proxima_x = cabeca[0] + dx
+    variavel proxima_y = cabeca[1] + dy
+    se proxima_x < 1 ou proxima_x > LARGURA ou proxima_y < 1 ou proxima_y > ALTURA {
+        jogando = falso
+    } senao se ocupa(cobra, proxima_x, proxima_y) {
+        jogando = falso
+    } senao {
+        adicione(cobra, [proxima_x, proxima_y])
+        se proxima_x == comida[0] e proxima_y == comida[1] {
+            pontos = pontos + 1
+            comida = nova_comida(cobra)
+        } senao {
+            remova(cobra, 0)
+        }
+    }
+    tempo.durma(120)
+}
+
+terminal.mostre_cursor()
+terminal.posicione(1, ALTURA + 6)
+escreva("Fim de jogo. Pontos: " + texto(pontos))
