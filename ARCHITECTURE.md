@@ -310,7 +310,10 @@ As diferenças de terminal estão isoladas em `terminal.c`: Win32 usa console e
 `conio`; POSIX usa `termios`, `select` e `ioctl`. O modo de entrada anterior é
 restaurado após cada leitura, inclusive quando não há tecla. Desenho usa ANSI e
 nunca invoca shell. Saídas e entradas redirecionadas continuam passando por
-`RuntimeIO`, o que permite testes determinísticos. `lume/aleatorio` mantém um
+`RuntimeIO`, o que permite testes determinísticos. O contexto de `lume/terminal`
+registra cursor oculto e cor ativa para restaurar ambos quando o módulo é
+liberado. Textos produzidos por `terminal.estilize` possuem reset próprio e
+podem ser compostos antes de uma única escrita. `lume/aleatorio` mantém um
 estado xorshift64* privado ao módulo; ele é adequado a ensino e jogos, não a
 criptografia.
 

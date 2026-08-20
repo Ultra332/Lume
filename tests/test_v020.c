@@ -81,8 +81,55 @@ static void test_terminal_module(void) {
     CHECK(strstr(output, "\x1b[?25l\x1b[?25h") != NULL);
 }
 
+static void test_terminal_colors(void) {
+    char output[16384];
+    const char *code =
+        "importe \"lume/terminal\"\n"
+        "variavel cores = [\"preto\", \"vermelho\", \"verde\", \"amarelo\", "
+        "\"azul\", \"magenta\", \"ciano\", \"branco\", \"cinza\", "
+        "\"vermelho_claro\", \"verde_claro\", \"amarelo_claro\", "
+        "\"azul_claro\", \"magenta_claro\", \"ciano_claro\", \"branco_claro\"]\n"
+        "para cor em cores {\n terminal.cor_texto(cor)\n terminal.cor_fundo(cor)\n}\n"
+        "terminal.resetar_cor()\n"
+        "escreva(terminal.estilize(\"ok\", \"verde_claro\", \"azul\"))\n";
+    int text_codes[] = {30,31,32,33,34,35,36,37,90,91,92,93,94,95,96,97};
+    int background_codes[] = {40,41,42,43,44,45,46,47,100,101,102,103,104,105,106,107};
+    size_t i;
+    CHECK(execute(code, NULL, output, sizeof(output)));
+    for (i = 0U; i < sizeof(text_codes) / sizeof(text_codes[0]); i++) {
+        char sequence[16];
+        (void)snprintf(sequence, sizeof(sequence), "\x1b[%dm", text_codes[i]);
+        CHECK(strstr(output, sequence) != NULL);
+        (void)snprintf(sequence, sizeof(sequence), "\x1b[%dm", background_codes[i]);
+        CHECK(strstr(output, sequence) != NULL);
+    }
+    CHECK(strstr(output, "\x1b[0m") != NULL);
+    CHECK(strstr(output, "\x1b[92;44mok\x1b[0m\n") != NULL);
+
+    CHECK(!execute("importe \"lume/terminal\"\nterminal.cor_fundo(10)\n", NULL,
+        output, sizeof(output)));
+    CHECK(!execute("importe \"lume/terminal\"\nterminal.cor_fundo(\"banana\")\n", NULL,
+        output, sizeof(output)));
+    CHECK(!execute("importe \"lume/terminal\"\nterminal.cor_texto()\n", NULL,
+        output, sizeof(output)));
+    CHECK(!execute("importe \"lume/terminal\"\nterminal.resetar_cor(\"azul\")\n", NULL,
+        output, sizeof(output)));
+    CHECK(!execute("importe \"lume/terminal\"\nterminal.estilize(\"x\", \"verde\")\n", NULL,
+        output, sizeof(output)));
+
+    CHECK(execute("importe \"lume/terminal\"\nterminal.cor_fundo(\"azul\")\n", NULL,
+        output, sizeof(output)));
+    CHECK(strstr(output, "\x1b[44m\x1b[0m") != NULL);
+    CHECK(!execute("importe \"lume/terminal\"\nterminal.cor_texto(\"amarelo\")\n"
+        "terminal.posicione(0, 1)\n", NULL, output, sizeof(output)));
+    CHECK(strstr(output, "\x1b[33m\x1b[0m") != NULL);
+    CHECK(execute("importe \"lume/terminal\"\npara i de 1 ate 100 {\n"
+        " terminal.cor_texto(\"verde\")\n terminal.resetar_cor()\n}\n", NULL,
+        output, sizeof(output)));
+}
+
 int main(void) {
-    test_read_prompt(); test_random_module(); test_terminal_module();
-    if (failures == 0) { puts("Todos os testes da Lume v0.2.0 passaram."); return 0; }
+    test_read_prompt(); test_random_module(); test_terminal_module(); test_terminal_colors();
+    if (failures == 0) { puts("Todos os testes da Lume v0.2.1 passaram."); return 0; }
     fprintf(stderr, "%d teste(s) falharam.\n", failures); return 1;
 }

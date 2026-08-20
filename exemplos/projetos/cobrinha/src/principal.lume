@@ -4,6 +4,13 @@ importe "lume/tempo"
 
 constante LARGURA = 30
 constante ALTURA = 16
+constante COLUNAS_MINIMAS = 64
+constante LINHAS_MINIMAS = 21
+constante CELULA_VAZIA = terminal.estilize("  ", "padrao", "preto")
+constante CELULA_PAREDE = terminal.estilize("  ", "padrao", "ciano")
+constante CELULA_COBRA = terminal.estilize("  ", "padrao", "verde_claro")
+constante CELULA_CABECA = terminal.estilize("  ", "padrao", "amarelo_claro")
+constante CELULA_COMIDA = terminal.estilize("  ", "padrao", "vermelho")
 
 funcao ocupa(cobra, x, y) {
     para parte em cobra {
@@ -24,79 +31,112 @@ funcao nova_comida(cobra) {
     retorne [x, y]
 }
 
-funcao desenhe(cobra, comida, pontos) {
-    terminal.limpe()
-    para x de 0 ate LARGURA + 1 {
-        terminal.posicione(x + 1, 1)
-        escreva("#")
-        terminal.posicione(x + 1, ALTURA + 2)
-        escreva("#")
-    }
-    para y de 1 ate ALTURA {
-        terminal.posicione(1, y + 1)
-        escreva("#")
-        terminal.posicione(LARGURA + 2, y + 1)
-        escreva("#")
-    }
-    terminal.posicione(comida[0] + 1, comida[1] + 1)
-    escreva("*")
-    para parte em cobra {
-        terminal.posicione(parte[0] + 1, parte[1] + 1)
-        escreva("o")
-    }
+funcao desenhe(cobra, comida, pontos, iniciou) {
     variavel cabeca = cobra[tamanho(cobra) - 1]
-    terminal.posicione(cabeca[0] + 1, cabeca[1] + 1)
-    escreva("@")
-    terminal.posicione(1, ALTURA + 4)
-    escreva("Pontos: " + texto(pontos) + "  |  WASD move, Q sai")
+    variavel quadro = ""
+
+    para y de 0 ate ALTURA + 1 {
+        variavel linha = ""
+        para x de 0 ate LARGURA + 1 {
+            se x == 0 ou x == LARGURA + 1 ou y == 0 ou y == ALTURA + 1 {
+                linha = linha + CELULA_PAREDE
+            } senao se x == cabeca[0] e y == cabeca[1] {
+                linha = linha + CELULA_CABECA
+            } senao se x == comida[0] e y == comida[1] {
+                linha = linha + CELULA_COMIDA
+            } senao se ocupa(cobra, x, y) {
+                linha = linha + CELULA_COBRA
+            } senao {
+                linha = linha + CELULA_VAZIA
+            }
+        }
+        quadro = quadro + linha + "\n"
+    }
+
+    variavel status = ""
+    se iniciou {
+        status = "Pontos: " + texto(pontos) + " | WASD move | Q sai"
+    } senao {
+        status = "Pressione W, A, S ou D para começar | Q sai"
+    }
+    enquanto tamanho(status) < COLUNAS_MINIMAS {
+        status = status + " "
+    }
+    quadro = quadro + terminal.estilize(status, "branco_claro", "preto")
+
+    terminal.posicione(1, 1)
+    escreva(quadro)
 }
 
 variavel cobra = [[5, 8], [6, 8], [7, 8]]
 variavel comida = nova_comida(cobra)
-variavel dx = 1
+variavel dx = 0
 variavel dy = 0
 variavel pontos = 0
-variavel jogando = verdadeiro
+variavel jogando = falso
+variavel iniciou = falso
+variavel dimensoes = terminal.tamanho()
+variavel colunas = dimensoes[0]
+variavel linhas = dimensoes[1]
 
-terminal.oculte_cursor()
+se colunas < COLUNAS_MINIMAS ou linhas < LINHAS_MINIMAS {
+    escreva("Terminal pequeno demais para a Cobrinha.")
+    escreva("Aumente a janela e execute novamente.")
+    escreva("Tamanho mínimo: " + texto(COLUNAS_MINIMAS) + " colunas x " + texto(LINHAS_MINIMAS) + " linhas.")
+    escreva("Tamanho atual: " + texto(colunas) + " colunas x " + texto(linhas) + " linhas.")
+} senao {
+    jogando = verdadeiro
+    terminal.limpe()
+    terminal.oculte_cursor()
+}
+
 enquanto jogando {
-    desenhe(cobra, comida, pontos)
+    desenhe(cobra, comida, pontos, iniciou)
     variavel tecla = terminal.tecla()
     se tecla == "w" e dy != 1 {
         dx = 0
         dy = -1
+        iniciou = verdadeiro
     } senao se tecla == "s" e dy != -1 {
         dx = 0
         dy = 1
+        iniciou = verdadeiro
     } senao se tecla == "a" e dx != 1 {
         dx = -1
         dy = 0
+        iniciou = verdadeiro
     } senao se tecla == "d" e dx != -1 {
         dx = 1
         dy = 0
+        iniciou = verdadeiro
     } senao se tecla == "q" {
         pare
     }
 
-    variavel cabeca = cobra[tamanho(cobra) - 1]
-    variavel proxima_x = cabeca[0] + dx
-    variavel proxima_y = cabeca[1] + dy
-    se proxima_x < 1 ou proxima_x > LARGURA ou proxima_y < 1 ou proxima_y > ALTURA {
-        jogando = falso
-    } senao se ocupa(cobra, proxima_x, proxima_y) {
-        jogando = falso
-    } senao {
-        adicione(cobra, [proxima_x, proxima_y])
-        se proxima_x == comida[0] e proxima_y == comida[1] {
-            pontos = pontos + 1
-            comida = nova_comida(cobra)
+    se iniciou {
+        variavel cabeca = cobra[tamanho(cobra) - 1]
+        variavel proxima_x = cabeca[0] + dx
+        variavel proxima_y = cabeca[1] + dy
+        se proxima_x < 1 ou proxima_x > LARGURA ou proxima_y < 1 ou proxima_y > ALTURA {
+            jogando = falso
+        } senao se ocupa(cobra, proxima_x, proxima_y) {
+            jogando = falso
         } senao {
-            remova(cobra, 0)
+            adicione(cobra, [proxima_x, proxima_y])
+            se proxima_x == comida[0] e proxima_y == comida[1] {
+                pontos = pontos + 1
+                comida = nova_comida(cobra)
+            } senao {
+                remova(cobra, 0)
+            }
         }
     }
-    tempo.durma(120)
+    tempo.durma(180)
 }
 
-terminal.mostre_cursor()
-terminal.posicione(1, ALTURA + 6)
-escreva("Fim de jogo. Pontos: " + texto(pontos))
+se colunas >= COLUNAS_MINIMAS e linhas >= LINHAS_MINIMAS {
+    terminal.resetar_cor()
+    terminal.mostre_cursor()
+    terminal.posicione(1, ALTURA + 4)
+    escreva("Fim de jogo. Pontos: " + texto(pontos))
+}

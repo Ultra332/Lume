@@ -2,6 +2,29 @@
 
 Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.2.1] — 2026-08-20
+
+Atualização visual e de usabilidade para programas interativos no terminal.
+
+### Adicionado
+
+- cores de texto e fundo em `lume/terminal`;
+- `terminal.estilize` para compor interfaces coloridas antes de uma única escrita;
+- cores ANSI básicas, claras e restauração da cor padrão;
+- testes de cores, argumentos inválidos, chamadas repetidas e restauração de estado.
+
+### Alterado
+
+- a Cobrinha usa células coloridas de duas colunas e frame completo em memória;
+- o jogo exige uma área mínima de 64 colunas por 21 linhas e orienta o usuário
+  antes de iniciar quando o terminal é pequeno;
+- documentação e distribuição passam a identificar a versão 0.2.1.
+
+### Corrigido
+
+- frames da Cobrinha deixam de acumular ou piscar por limpezas e escritas pequenas;
+- cores ativas e cursor oculto são restaurados no encerramento normal ou em erro tratado.
+
 ## [0.2.0] — 2026-08-20
 
 Primeira atualização funcional após a estabilização da série 0.1.x, focada em

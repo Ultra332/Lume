@@ -28,6 +28,8 @@ static bool prepare_output(FILE *output) {
     return true;
 }
 
+bool terminal_prepare(FILE *output) { return prepare_output(output); }
+
 static bool write_escape(FILE *output, const char *sequence) {
     if (!prepare_output(output)) return false;
     return fputs(sequence, output) >= 0 && fflush(output) == 0;
@@ -42,6 +44,16 @@ bool terminal_position(FILE *output, size_t column, size_t row) {
 bool terminal_cursor(FILE *output, bool visible) {
     return write_escape(output, visible ? "\x1b[?25h" : "\x1b[?25l");
 }
+
+static bool terminal_color(FILE *output, int code) {
+    return prepare_output(output) && fprintf(output, "\x1b[%dm", code) >= 0 && fflush(output) == 0;
+}
+
+bool terminal_text_color(FILE *output, int code) { return terminal_color(output, code); }
+
+bool terminal_background_color(FILE *output, int code) { return terminal_color(output, code); }
+
+bool terminal_reset_color(FILE *output) { return write_escape(output, "\x1b[0m"); }
 
 void terminal_size(FILE *output, size_t *columns, size_t *rows) {
     *columns = 80U; *rows = 24U;
