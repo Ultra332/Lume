@@ -1,4 +1,4 @@
-Lume 0.1.1 - Windows x64
+Lume 0.1.2 - Windows x64
 ================================
 
 Este é o pacote portátil da linguagem de programação educacional Lume.

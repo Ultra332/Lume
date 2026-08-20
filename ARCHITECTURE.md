@@ -140,22 +140,23 @@ Chamadas e índices formam uma única cadeia postfix no parser, permitindo
 ### Ambientes e closures
 
 `Environment` é uma tabela hash própria, apontando para um ambiente pai.
-Bindings guardam valor, mutabilidade e localização da declaração. Na Fase 5,
-ambientes criados durante a execução pertencem a uma arena do ambiente global e
-vivem até o encerramento daquela execução. Closures mantêm ponteiros não
-proprietários para esses frames; chamáveis usam contagem de referências.
+Bindings guardam valor, mutabilidade e localização da declaração. Cada ambiente
+usa open addressing com sondagem linear e cresce antes de atingir 75% de
+ocupação. Nomes e valores são copiados, portanto não dependem da `Source` ou da
+AST.
 
-A arena foi escolhida em vez de contagem de referências nos ambientes porque o
-grafo `ambiente -> função local -> ambiente capturado` contém ciclos legítimos.
-Liberar o grafo inteiro no fim evita ciclos retidos e acessos após liberação sem
-introduzir um coletor de lixo. O custo deliberado nesta fase é reter frames até
-o término do programa, inclusive frames transitórios de laços e chamadas.
+Desde a v0.1.2, ambientes filhos começam temporários. Ao terminar um bloco,
+laço ou chamada, seus bindings e o próprio frame são liberados imediatamente.
+Quando uma função local é criada, `environment_capture` promove para a arena o
+ambiente da closure e todos os pais não globais necessários à resolução léxica.
+Ambientes promovidos vivem até o encerramento do ambiente global da sessão ou
+do módulo; os demais não aumentam a arena.
 
-Na Fase 3, cada `Environment` usa open addressing com sondagem linear e cresce
-antes de atingir 75% de ocupação. Não há remoção individual de bindings; o
-ambiente inteiro é destruído ao sair do escopo. Nomes e valores são copiados,
-portanto não dependem da `Source` ou da AST. O ponteiro para o ambiente pai é
-emprestado e o filho deve ser destruído primeiro.
+Essa promoção conservadora preserva closures sem introduzir contagem de
+referências nos ambientes. O grafo `ambiente -> função local -> ambiente
+capturado` pode conter ciclos legítimos, então frames capturados continuam sendo
+destruídos em conjunto no final. O ponteiro para o pai é emprestado: a promoção
+da cadeia garante seu lifetime quando uma closure escapa.
 
 Bindings guardam nome, valor, mutabilidade e span de declaração. Lookup e
 atribuição percorrem pais; definição consulta somente o escopo atual. Conflitos

@@ -52,10 +52,15 @@ compatibilidade de nativas e ausência no lockfile.
 incompletas, diagnósticos léxicos/sintáticos, erros numéricos, de tipo e índice,
 listas maiores, textos longos, muitas declarações e análise de uma AST maior sem
 executá-la. Também cobre a fronteira de 128 níveis do parser, a primeira entrada
-recusada e o caminho de `--analisar` sem crash.
+recusada e o caminho de `--analisar` sem crash. Os testes de ownership executam
+milhares de atribuições, blocos, chamadas, listas e textos e confirmam que nenhum
+ambiente temporário fica na arena. Uma closure que escapa confirma o caso oposto:
+seu ambiente precisa e continua sendo preservado.
 
 `test_repl.c` também verifica diagnósticos associados a Sources antigas para
 erros de nome, tipo, índice e closures, seguidos por execução válida na sessão.
+Execuções repetidas de blocos e imports validam que REPL e módulos não acumulam
+ambientes transitórios entre unidades.
 
 Execute as dezesseis suítes na raiz com `make test`.
 

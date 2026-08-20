@@ -1,9 +1,11 @@
 #include "callable.h"
 #include "ast.h"
+#include "environment.h"
 #include "memory.h"
 Callable *callable_new_user(const Stmt *declaration, Environment *closure) {
     Callable *callable;
     if (declaration == NULL || declaration->type != STMT_FUNCTION) return NULL;
+    if (!environment_capture(closure)) return NULL;
     callable = memory_allocate(sizeof(*callable));
     if (callable == NULL) return NULL;
     callable->references = 1U; callable->type = CALLABLE_USER;
