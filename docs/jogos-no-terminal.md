@@ -35,11 +35,17 @@ cauda no índice zero. Quando comeu, conserva a cauda, fazendo a cobra crescer.
 Assim o jogo continua se movendo sem exigir Enter nem criar busy-wait. As regras
 impedem uma inversão direta que faria a cabeça colidir com o corpo.
 
-## 5. Desenhar
+## 5. Desenhar e colorir
 
-`terminal.limpe()` inicia o quadro. `terminal.posicione(coluna, linha)` coloca
-bordas, comida e cada parte da cobra em coordenadas absolutas. O cursor fica
-oculto durante a partida e é mostrado novamente no encerramento normal.
+`terminal.limpe()` é chamado uma vez no início. Cada célula usa dois espaços
+com cor de fundo, aproximando sua largura da altura visual de uma linha. A
+Cobrinha combina trechos criados por `terminal.estilize`, monta o quadro inteiro
+em um texto e só então usa `terminal.posicione(1, 1)` e `escreva`. Assim cada
+frame requer uma única escrita, sem acumular tabuleiros no scroll.
+
+Antes de limpar ou ocultar o cursor, `terminal.tamanho()` confirma uma área
+mínima de 64 colunas por 21 linhas. Terminais menores recebem uma orientação e
+o jogo não inicia.
 
 ## 6. Gerar comida
 
@@ -55,8 +61,9 @@ Lume; C fornece apenas primitivas genéricas de terminal e aleatoriedade.
 ## 8. Aumentar a pontuação
 
 Ao alcançar a comida, o programa soma um ponto, mantém a cauda e sorteia outra
-posição. `tempo.durma(120)` controla o ritmo sem espera ocupada.
+posição. `tempo.durma(180)` controla o ritmo sem espera ocupada.
 
-Este primeiro terminal trabalha com teclas textuais simples, não com um sistema
-geral de eventos. Se o processo for encerrado à força enquanto o cursor estiver
-oculto, execute `terminal.mostre_cursor()` em outro programa ou reabra o terminal.
+Este terminal trabalha com teclas textuais simples, não com um sistema geral de
+eventos. No encerramento normal ou em erro tratado, o módulo restaura cores e
+cursor. Uma interrupção externa que mate o processo imediatamente não permite
+ao programa executar essa limpeza; nesse caso, reabra o terminal.

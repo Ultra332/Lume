@@ -77,6 +77,36 @@ exercícios, simulações e jogos; não oferece aleatoriedade criptográfica.
   fallback determinístico é `[80, 24]`.
 - `leia_tecla()` espera uma tecla sem exigir Enter em terminal interativo.
 - `tecla()` lê sem bloquear e retorna `nulo` quando nada está disponível.
+- `cor_texto(cor)` altera a cor das próximas escritas.
+- `cor_fundo(cor)` altera a cor de fundo das próximas escritas.
+- `resetar_cor()` restaura as cores padrão do terminal.
+- `estilize(texto, cor_texto, cor_fundo)` devolve um novo texto com estilo e
+  reset incorporados. Essa forma permite montar um quadro inteiro antes de
+  escrevê-lo, reduzindo flicker em jogos e dashboards.
+
+As cores básicas são `preto`, `vermelho`, `verde`, `amarelo`, `azul`,
+`magenta`, `ciano` e `branco`. Também existem `cinza`, `vermelho_claro`,
+`verde_claro`, `amarelo_claro`, `azul_claro`, `magenta_claro`, `ciano_claro`
+e `branco_claro`. O nome `padrao` seleciona a cor original do terminal.
+
+```lume
+importe "lume/terminal"
+
+terminal.cor_texto("verde")
+escreva("Tudo certo!")
+terminal.resetar_cor()
+
+terminal.cor_fundo("azul")
+escreva("  bloco azul  ")
+terminal.resetar_cor()
+
+variavel aviso = terminal.estilize(" Atenção ", "branco_claro", "vermelho")
+escreva(aviso)
+```
+
+Uma cor desconhecida ou um argumento que não seja texto produz um diagnóstico
+Lume com os nomes aceitos. Ao encerrar uma sessão, a biblioteca restaura uma
+cor ativa e torna o cursor visível, inclusive depois de um erro tratado.
 
 O desenho usa sequências ANSI. A camada C isola Win32 de POSIX, não chama
 `system()` e restaura o modo de entrada após cada consulta. Teclas são expostas

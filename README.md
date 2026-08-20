@@ -11,7 +11,7 @@
 
 Lume é uma linguagem de programação educacional em português, pequena o bastante para ser estudada e completa o bastante para ensinar programas reais. A implementação de referência é escrita em C11 e inclui interpretador, REPL, análise estática, módulos, projetos reproduzíveis e uma biblioteca padrão organizada.
 
-> Estado: **Lume v0.2.0 — Primeiros Projetos**. Esta versão experimental permite transformar fundamentos em programas interativos e pequenos jogos no terminal.
+> Estado: **Lume v0.2.1 — Terminal colorido**. Esta versão experimental permite transformar fundamentos em programas interativos e pequenos jogos no terminal.
 
 ## Um primeiro programa
 
@@ -44,7 +44,7 @@ A referência da sintaxe e semântica está em [LANGUAGE.md](LANGUAGE.md). Se es
 
 ### Windows
 
-1. Baixe `Lume-0.2.0-Windows-x64-Setup.exe` na página de releases.
+1. Baixe `Lume-0.2.1-Windows-x64-Setup.exe` na página de releases.
 2. Execute o instalador e conclua as etapas apresentadas.
 3. Abra um novo PowerShell, CMD ou terminal do VS Code.
 4. Verifique:
@@ -58,7 +58,7 @@ Make, MSYS2 ou o código-fonte.
 
 ### Versão portátil
 
-Baixe `Lume-0.2.0-Windows-x64.zip`, extraia todo o conteúdo e execute
+Baixe `Lume-0.2.1-Windows-x64.zip`, extraia todo o conteúdo e execute
 `lume.exe`. O ZIP não modifica o sistema; para chamar `lume` de qualquer pasta,
 adicione manualmente a pasta extraída ao `PATH`.
 

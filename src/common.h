@@ -6,9 +6,9 @@
 #include <stdint.h>
 
 #define LUME_VERSION_MAJOR 0
-#define LUME_VERSION_MINOR 1
-#define LUME_VERSION_PATCH 2
-#define LUME_VERSION_STRING "0.2.0"
+#define LUME_VERSION_MINOR 2
+#define LUME_VERSION_PATCH 1
+#define LUME_VERSION_STRING "0.2.1"
 #define LUME_VERSION LUME_VERSION_STRING
 
 #endif
