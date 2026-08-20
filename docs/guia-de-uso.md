@@ -14,7 +14,7 @@ lume --versao
 Resultado esperado:
 
 ```text
-Lume 0.1.2
+Lume 0.2.0
 ```
 
 Use `lume --ajuda` sempre que quiser rever os comandos disponíveis.

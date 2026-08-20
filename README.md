@@ -11,7 +11,7 @@
 
 Lume é uma linguagem de programação educacional em português, pequena o bastante para ser estudada e completa o bastante para ensinar programas reais. A implementação de referência é escrita em C11 e inclui interpretador, REPL, análise estática, módulos, projetos reproduzíveis e uma biblioteca padrão organizada.
 
-> Estado: **Lume v0.1.2 — atualização de memória e desempenho da versão pública experimental**. A linguagem é utilizável, mas ainda está em evolução e pode receber mudanças incompatíveis antes da versão 1.0.
+> Estado: **Lume v0.2.0 — Primeiros Projetos**. Esta versão experimental permite transformar fundamentos em programas interativos e pequenos jogos no terminal.
 
 ## Um primeiro programa
 
@@ -30,10 +30,10 @@ lume ola.lume
 
 - números, textos, booleanos, listas e `nulo`;
 - variáveis, constantes, escopo léxico e closures;
-- `se`, `senao`, `enquanto` e `para`;
+- `se`, `senao`, `enquanto`, `para`, `para ... em`, `pare` e `continue`;
 - funções, recursão e retornos;
 - módulos com `importe`, projetos e dependências locais;
-- biblioteca padrão para texto, matemática, listas, conversão e entrada/saída;
+- biblioteca padrão para texto, matemática, aleatoriedade, terminal, arquivos e tempo;
 - REPL e diagnósticos em português;
 - análise estática educacional, explicação e execução passo a passo.
 
@@ -44,7 +44,7 @@ A referência da sintaxe e semântica está em [LANGUAGE.md](LANGUAGE.md). Se es
 
 ### Windows
 
-1. Baixe `Lume-0.1.2-Windows-x64-Setup.exe` na página de releases.
+1. Baixe `Lume-0.2.0-Windows-x64-Setup.exe` na página de releases.
 2. Execute o instalador e conclua as etapas apresentadas.
 3. Abra um novo PowerShell, CMD ou terminal do VS Code.
 4. Verifique:
@@ -58,7 +58,7 @@ Make, MSYS2 ou o código-fonte.
 
 ### Versão portátil
 
-Baixe `Lume-0.1.2-Windows-x64.zip`, extraia todo o conteúdo e execute
+Baixe `Lume-0.2.0-Windows-x64.zip`, extraia todo o conteúdo e execute
 `lume.exe`. O ZIP não modifica o sistema; para chamar `lume` de qualquer pasta,
 adicione manualmente a pasta extraída ao `PATH`.
 
@@ -105,6 +105,10 @@ lume
 Quando o diretório atual contém `lume.projeto`, `lume` executa esse projeto; fora de um projeto, abre o REPL. O manifesto define entrada, fonte e dependências locais, e `lume resolver` produz o `lume.lock`, que deve ser versionado.
 
 Para testes simples, crie `tests/exemplo.lume` na raiz do projeto e execute `lume testar`. Consulte o [guia de projetos](docs/projetos.md), [LANGUAGE.md](LANGUAGE.md) e a [biblioteca padrão](docs/biblioteca-padrao.md).
+
+O projeto oficial [Cobrinha](exemplos/projetos/cobrinha) demonstra listas,
+funções, aleatoriedade, tempo e teclado em um jogo inteiramente escrito em Lume.
+Veja o tutorial [Jogos no terminal](docs/jogos-no-terminal.md).
 
 ## Desenvolvendo a Lume
 

@@ -213,6 +213,25 @@ Stmt *stmt_new_for(const char *name, size_t name_length, SourceSpan name_span,
     statement->as.for_statement.body = body;
     return statement;
 }
+Stmt *stmt_new_for_each(const char *name, size_t name_length, SourceSpan name_span,
+                        Expr *iterable, Stmt *body, SourceSpan span) {
+    Stmt *statement;
+    char *copy;
+    if (name == NULL || iterable == NULL || body == NULL) return NULL;
+    statement = stmt_allocate(STMT_FOR_EACH, span);
+    if (statement == NULL) return NULL;
+    copy = memory_copy_string(name, name_length);
+    if (copy == NULL) { memory_free(statement); return NULL; }
+    statement->as.for_each_statement.iterator_name = copy;
+    statement->as.for_each_statement.iterator_length = name_length;
+    statement->as.for_each_statement.iterator_span = name_span;
+    statement->as.for_each_statement.iterable = iterable;
+    statement->as.for_each_statement.body = body;
+    return statement;
+}
+Stmt *stmt_new_loop_control(bool is_break, SourceSpan span) {
+    return stmt_allocate(is_break ? STMT_BREAK : STMT_CONTINUE, span);
+}
 Stmt *stmt_new_function(const char *name, size_t name_length, SourceSpan name_span,
                         char **parameters, size_t *parameter_lengths,
                         SourceSpan *parameter_spans, size_t parameter_count,
@@ -267,6 +286,14 @@ void stmt_free(Stmt *statement) {
             expr_free(statement->as.for_statement.start);
             expr_free(statement->as.for_statement.end);
             stmt_free(statement->as.for_statement.body);
+            break;
+        case STMT_FOR_EACH:
+            memory_free(statement->as.for_each_statement.iterator_name);
+            expr_free(statement->as.for_each_statement.iterable);
+            stmt_free(statement->as.for_each_statement.body);
+            break;
+        case STMT_BREAK:
+        case STMT_CONTINUE:
             break;
         case STMT_FUNCTION: {
             size_t index;

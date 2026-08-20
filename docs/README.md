@@ -9,6 +9,7 @@ Escolha o caminho que corresponde ao que você deseja fazer.
 3. [Começando com a linguagem](comecando.md)
 4. [Projetos e comandos da CLI](projetos.md)
 5. [Biblioteca padrão](biblioteca-padrao.md)
+6. [Jogos no terminal](jogos-no-terminal.md)
 
 ## Quero aprender programação
 
@@ -16,6 +17,7 @@ Escolha o caminho que corresponde ao que você deseja fazer.
 - [Algoritmos](algoritmos.md)
 - [Soluções de referência](solucoes.md)
 - [Modos educacionais](modos-educacionais.md)
+- [Tutorial da Cobrinha](jogos-no-terminal.md)
 - [Depois da Lume](depois-da-lume.md)
 
 ## Quero ensinar
@@ -33,4 +35,3 @@ Escolha o caminho que corresponde ao que você deseja fazer.
 - [Processo de release](release.md)
 
 A especificação normativa da linguagem está em [LANGUAGE.md](../LANGUAGE.md).
-

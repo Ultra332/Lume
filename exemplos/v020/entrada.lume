@@ -1,0 +1,4 @@
+variavel nome = leia("Qual e seu nome? ")
+variavel idade = inteiro(leia("Qual e sua idade? "))
+escreva("Ola, " + nome)
+escreva(idade)

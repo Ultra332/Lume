@@ -1,0 +1,4 @@
+nome = "cobrinha"
+versao = "0.2.0"
+entrada = "src/principal.lume"
+fonte = "src"

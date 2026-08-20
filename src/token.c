@@ -34,7 +34,8 @@ const char *token_type_name(TokenType type) {
         "LESS", "LESS_EQUAL", "KW_VARIAVEL", "KW_CONSTANTE", "KW_SE",
         "KW_SENAO", "KW_ENQUANTO", "KW_PARA", "KW_DE", "KW_ATE",
         "KW_FUNCAO", "KW_RETORNE", "KW_VERDADEIRO", "KW_FALSO", "KW_NULO",
-        "KW_E", "KW_OU", "KW_NAO", "KW_IMPORTE", "KW_EXPORTE"
+        "KW_E", "KW_OU", "KW_NAO", "KW_IMPORTE", "KW_EXPORTE", "KW_EM",
+        "KW_PARE", "KW_CONTINUE"
     };
     size_t index = (size_t)type;
     return index < sizeof(names) / sizeof(names[0]) ? names[index] : "UNKNOWN";

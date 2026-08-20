@@ -1,4 +1,4 @@
-# Especificação da linguagem Lume 0.1
+# Especificação da linguagem Lume 0.2
 
 Este documento define a sintaxe pretendida para o primeiro interpretador. Itens
 marcados como futuros não fazem parte da implementação inicial.
@@ -214,7 +214,7 @@ se nota >= 7 {
 }
 ```
 
-`enquanto` testa antes de cada iteração. O `para` inicial percorre um intervalo
+`enquanto` testa antes de cada iteração. O `para` numérico percorre um intervalo
 inclusivo, com passo `+1`; limites são avaliados uma vez e precisam ser inteiros:
 
 ```lume
@@ -224,7 +224,25 @@ para i de 1 ate 5 {
 ```
 
 Se o início for maior que o fim, o corpo executa zero vezes. `i` é uma variável
-imutável local ao laço. `pare` e `continue` não fazem parte da 0.1.
+imutável local ao laço. Listas também podem ser percorridas diretamente:
+
+```lume
+para nome em ["Ana", "Bia"] {
+    escreva(nome)
+}
+```
+
+`para ... em` aceita somente listas. O runtime cria uma fotografia rasa dos
+elementos no início: inclusões e remoções posteriores não mudam a sequência nem
+o número de iterações. Valores compartilhados, como listas internas e funções,
+preservam seu aliasing. O iterador é imutável, local ao laço e não escapa dele.
+
+`pare` encerra somente o laço mais interno. `continue` abandona somente a
+iteração atual e começa a próxima. Ambos funcionam em `enquanto` e nas duas
+formas de `para`; fora de um laço são erros de sintaxe. Uma função declarada
+dentro de um laço não herda essa permissão. O nome `continue` foi mantido porque
+já era o termo reservado na documentação anterior; criar uma tradução nova na
+v0.2.0 seria uma escolha arbitrária e menos compatível com esse histórico.
 
 Os dois limites são avaliados uma única vez e precisam ser inteiros. O laço
 possui um ambiente próprio para o iterador, que pode sombrear um nome externo;
@@ -301,11 +319,15 @@ decl_funcao    = "funcao", IDENT, "(", [ parametros ], ")", bloco ;
 parametros     = IDENT, { ",", IDENT } ;
 
 instrucao      = instr_se | instr_enquanto | instr_para | instr_retorne
+               | instr_pare | instr_continue
                | bloco | atribuicao_ou_expressao ;
 instr_se       = "se", expressao, bloco,
                  [ "senao", ( instr_se | bloco ) ] ;
 instr_enquanto = "enquanto", expressao, bloco ;
-instr_para     = "para", IDENT, "de", expressao, "ate", expressao, bloco ;
+instr_para     = "para", IDENT,
+                 ( "de", expressao, "ate", expressao | "em", expressao ), bloco ;
+instr_pare     = "pare" ;
+instr_continue = "continue" ;
 instr_retorne  = "retorne", [ expressao ] ;
 bloco          = "{", terminadores,
                  { declaracao, terminadores }, "}" ;

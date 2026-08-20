@@ -1,0 +1,5 @@
+importe "lume/aleatorio"
+
+escreva(aleatorio.inteiro(1, 6))
+escreva(aleatorio.decimal())
+escreva(aleatorio.escolha(["cara", "coroa"]))

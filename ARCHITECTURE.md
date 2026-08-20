@@ -203,6 +203,13 @@ consumidores que retenham dados precisam copiá-los. O runtime normal usa callba
 nulo. `--explicar` instala um renderer não interativo e `--passo` acrescenta
 pausas dirigidas pela mesma abstração `RuntimeIO` usada nos testes.
 
+Na v0.2.0, o resultado discriminado da execução também possui `EXEC_BREAK` e
+`EXEC_CONTINUE`. Blocos e condicionais propagam esses estados; o laço mais
+próximo os consome. O parser zera a profundidade de laço ao entrar em uma função,
+impedindo que controle de fluxo escape através de uma fronteira de chamada.
+`para ... em` copia os `Value` da lista para uma fotografia rasa com ownership
+normal antes de iterar, liberada em todos os caminhos de saída.
+
 A pilha exibida é lógica: a profundidade é mantida pelo interpretador ao entrar
 e sair de funções Lume, sem examinar a pilha C. A visualização percorre somente o
 ambiente ativo recebido no evento e seus pais; frames antigos retidos pela arena
@@ -298,6 +305,14 @@ Callbacks recebem argumentos, `RuntimeIO`, contexto, span e `ErrorList`, sem
 conhecer o interpretador. `lume/arquivo` guarda como contexto a raiz do projeto
 ou diretório do script. Validação multi-arquivo cria apenas metadata/export
 tables; nenhuma função padrão é chamada pelo analyzer.
+
+As diferenças de terminal estão isoladas em `terminal.c`: Win32 usa console e
+`conio`; POSIX usa `termios`, `select` e `ioctl`. O modo de entrada anterior é
+restaurado após cada leitura, inclusive quando não há tecla. Desenho usa ANSI e
+nunca invoca shell. Saídas e entradas redirecionadas continuam passando por
+`RuntimeIO`, o que permite testes determinísticos. `lume/aleatorio` mantém um
+estado xorshift64* privado ao módulo; ele é adequado a ensino e jogos, não a
+criptografia.
 
 ## 4. Ownership e memória
 

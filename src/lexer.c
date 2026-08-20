@@ -88,7 +88,9 @@ static TokenType identifier_type(const Lexer *lexer) {
         {"retorne", TOKEN_KW_RETORNE}, {"verdadeiro", TOKEN_KW_VERDADEIRO},
         {"falso", TOKEN_KW_FALSO}, {"nulo", TOKEN_KW_NULO}, {"e", TOKEN_KW_E},
         {"ou", TOKEN_KW_OU}, {"nao", TOKEN_KW_NAO},
-        {"importe", TOKEN_KW_IMPORTE}, {"exporte", TOKEN_KW_EXPORTE}
+        {"importe", TOKEN_KW_IMPORTE}, {"exporte", TOKEN_KW_EXPORTE},
+        {"em", TOKEN_KW_EM}, {"pare", TOKEN_KW_PARE},
+        {"continue", TOKEN_KW_CONTINUE}
     };
     size_t index;
     for (index = 0U; index < sizeof(keywords) / sizeof(keywords[0]); index++) {
@@ -196,11 +198,11 @@ static bool scan_one(Lexer *lexer) {
             if (is_digit(value)) return scan_number(lexer);
             if (value >= 0x80U) {
                 while (peek(lexer) >= 0x80U || is_alphanumeric(peek(lexer))) (void)advance(lexer);
-                (void)report_error(lexer, "Caractere nao permitido em identificador na Lume 0.1.",
+                (void)report_error(lexer, "Caractere nao permitido em identificador na Lume.",
                     "Identificadores aceitam apenas A-Z, a-z, 0-9 e _." );
             } else {
                 (void)report_error(lexer, "Caractere nao reconhecido.",
-                    "Remova o caractere ou consulte os simbolos aceitos pela Lume 0.1." );
+                    "Remova o caractere ou consulte os simbolos aceitos pela Lume." );
             }
             return false;
     }

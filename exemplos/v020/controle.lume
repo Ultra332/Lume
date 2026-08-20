@@ -1,0 +1,10 @@
+// 'continue' pula um item; 'pare' encerra somente este laco.
+para numero de 1 ate 10 {
+    se numero == 3 {
+        continue
+    }
+    se numero == 7 {
+        pare
+    }
+    escreva(numero)
+}

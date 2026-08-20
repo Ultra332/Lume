@@ -2,6 +2,32 @@
 
 Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.2.0] — 2026-08-20
+
+Primeira atualização funcional após a estabilização da série 0.1.x, focada em
+permitir pequenos programas e jogos interativos no terminal.
+
+### Adicionado
+
+- iteração direta de listas com `para item em lista`;
+- `pare` e `continue` para controle do laço mais interno;
+- convite opcional em `leia(texto)`, preservando `leia()`;
+- módulos `lume/aleatorio` e `lume/terminal`;
+- eventos educacionais das novas construções;
+- exemplos da v0.2.0 e projeto/tutorial oficial da Cobrinha;
+- 17ª suíte de testes dedicada às APIs interativas.
+
+### Alterado
+
+- o analyzer reconhece iteração de coleções e seus escopos;
+- a documentação e distribuição passam a identificar a versão 0.2.0.
+
+### Corrigido
+
+- controle de fluxo de laços agora possui estados explícitos, sem atravessar
+  fronteiras de função;
+- iteração sobre lista modificada usa uma fotografia rasa segura e determinística.
+
 ## [0.1.2] — 2026-08-20
 
 Atualização de memória e desempenho compatível com programas Lume 0.1.x.

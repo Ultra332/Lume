@@ -1,0 +1,8 @@
+importe "lume/terminal"
+
+terminal.limpe()
+terminal.posicione(10, 4)
+escreva("Lume no terminal")
+terminal.posicione(10, 6)
+escreva("Pressione uma tecla para sair.")
+terminal.leia_tecla()
