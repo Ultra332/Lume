@@ -4,8 +4,8 @@
 
 Baixe na página de releases do repositório oficial:
 
-- `Lume-0.1.1-Windows-x64-Setup.exe` — opção recomendada;
-- `Lume-0.1.1-Windows-x64.zip` — opção portátil;
+- `Lume-0.1.2-Windows-x64-Setup.exe` — opção recomendada;
+- `Lume-0.1.2-Windows-x64.zip` — opção portátil;
 - `SHA256SUMS.txt` — verificação de integridade.
 
 ### Instalador
@@ -18,7 +18,7 @@ Execute o Setup e avance pelas telas. A instalação usa
 lume --versao
 ```
 
-O resultado esperado é `Lume 0.1.1`. PowerShell, CMD e o terminal integrado do
+O resultado esperado é `Lume 0.1.2`. PowerShell, CMD e o terminal integrado do
 VS Code reconhecem o mesmo `PATH`; terminais que já estavam abertos precisam ser
 reiniciados.
 
@@ -69,8 +69,8 @@ O modo portátil não altera o `PATH`. Essa alteração, caso desejada, é manua
 No PowerShell, compare o resultado com `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\Lume-0.1.1-Windows-x64-Setup.exe -Algorithm SHA256
-Get-FileHash .\Lume-0.1.1-Windows-x64.zip -Algorithm SHA256
+Get-FileHash .\Lume-0.1.2-Windows-x64-Setup.exe -Algorithm SHA256
+Get-FileHash .\Lume-0.1.2-Windows-x64.zip -Algorithm SHA256
 ```
 
 ### SmartScreen

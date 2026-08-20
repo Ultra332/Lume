@@ -2,6 +2,24 @@
 
 Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.1.2] — 2026-08-20
+
+Atualização de memória e desempenho compatível com programas Lume 0.1.x.
+
+### Corrigido
+
+- escopos temporários de blocos, laços e chamadas deixam de permanecer na arena
+  global até o fim da execução;
+- loops e chamadas repetitivas deixam de consumir memória proporcionalmente à
+  quantidade de trabalho;
+- ambientes capturados por closures e toda a cadeia léxica necessária continuam
+  preservados até o encerramento da sessão ou do módulo.
+
+### Adicionado
+
+- testes de ownership para atribuições, laços, funções, listas, textos, closures,
+  módulos e execuções repetidas no REPL.
+
 ## [0.1.1] — 2026-08-19
 
 Atualização de estabilidade compatível com os programas da v0.1.0.

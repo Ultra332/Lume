@@ -81,8 +81,32 @@ static void test_parser_depth_limit(void) {
     code=nested_expression(129U,'[',']');CHECK(code!=NULL);if(code==NULL)return;run=run_text(code);CHECK(!run.ok);CHECK(run.errors.count==1U);run_free(&run);
     {FILE *file;RuntimeIO io={stdin,tmpfile()};char *argv[]={"lume","--analisar","tests/.tmp-parser-depth.lume"};CHECK(io.output!=NULL);file=fopen(argv[2],"wb");CHECK(file!=NULL);if(file!=NULL){fwrite(code,1U,strlen(code),file);fclose(file);CHECK(cli_run(3,argv,io)==1);remove(argv[2]);}if(io.output!=NULL)fclose(io.output);}free(code);
 }
+static void test_temporary_environment_ownership(void) {
+    Run run = run_text(
+        "variavel contador=0\n"
+        "enquanto contador<10000 { contador=contador+1 }\n");
+    CHECK(run.ok); CHECK(integer_binding(&run,"contador",10000));
+    CHECK(environment_retained_child_count(&run.environment)==0U); run_free(&run);
+
+    run = run_text(
+        "funcao identidade(valor){ retorne valor }\n"
+        "variavel i=0\n"
+        "enquanto i<10000 { identidade(i); i=i+1 }\n");
+    CHECK(run.ok); CHECK(environment_retained_child_count(&run.environment)==0U); run_free(&run);
+
+    run = run_text(
+        "variavel i=0\n"
+        "enquanto i<2000 { variavel xs=[i,i+1]; variavel texto=\"temporario\"; i=i+1 }\n");
+    CHECK(run.ok); CHECK(environment_retained_child_count(&run.environment)==0U); run_free(&run);
+
+    run = run_text(
+        "funcao fabrica(valor){ funcao interna(){ retorne valor }; retorne interna }\n"
+        "variavel closure=fabrica(42)\nvariavel resultado=closure()\n");
+    CHECK(run.ok); CHECK(integer_binding(&run,"resultado",42));
+    CHECK(environment_retained_child_count(&run.environment)>0U); run_free(&run);
+}
 int main(void) {
-    test_empty_comments_and_incomplete_inputs(); test_runtime_boundaries(); test_large_source(); test_large_string_and_analyzer(); test_parser_depth_limit();
+    test_empty_comments_and_incomplete_inputs(); test_runtime_boundaries(); test_large_source(); test_large_string_and_analyzer(); test_parser_depth_limit(); test_temporary_environment_ownership();
     if (failures==0) { puts("Todos os testes de estabilidade passaram."); return 0; }
     fprintf(stderr,"%d teste(s) de estabilidade falharam.\n",failures); return 1;
 }

@@ -161,22 +161,40 @@ void environment_free(Environment *environment) {
 }
 Environment *environment_new_child(Environment *parent) {
     Environment *child;
-    Environment **grown;
-    size_t capacity;
     if (parent == NULL || parent->arena == NULL) return NULL;
     child = memory_allocate(sizeof(*child));
     if (child == NULL) return NULL;
-    environment_init(child, parent); child->arena_owned = true;
-    if (parent->arena->count == parent->arena->capacity) {
-        if (!memory_grow_capacity(parent->arena->capacity, parent->arena->count + 1U, &capacity)) {
-            memory_free(child); return NULL;
-        }
-        grown = memory_reallocate_array(parent->arena->children, capacity, sizeof(*grown));
-        if (grown == NULL) { memory_free(child); return NULL; }
-        parent->arena->children = grown; parent->arena->capacity = capacity;
-    }
-    parent->arena->children[parent->arena->count++] = child;
+    environment_init(child, parent);
     return child;
+}
+bool environment_capture(Environment *environment) {
+    Environment *current;
+    if (environment == NULL || environment->arena == NULL) return false;
+    for (current = environment; current != NULL && !current->is_global; current = current->parent) {
+        Environment **grown;
+        size_t capacity;
+        if (current->arena_owned) continue;
+        if (current->arena->count == current->arena->capacity) {
+            if (!memory_grow_capacity(current->arena->capacity,
+                    current->arena->count + 1U, &capacity)) return false;
+            grown = memory_reallocate_array(current->arena->children,
+                capacity, sizeof(*grown));
+            if (grown == NULL) return false;
+            current->arena->children = grown;
+            current->arena->capacity = capacity;
+        }
+        current->arena->children[current->arena->count++] = current;
+        current->arena_owned = true;
+    }
+    return true;
+}
+void environment_release_child(Environment *environment) {
+    if (environment == NULL || environment->is_global || environment->arena_owned) return;
+    free_bindings(environment);
+    memory_free(environment);
+}
+size_t environment_retained_child_count(const Environment *environment) {
+    return environment == NULL || environment->arena == NULL ? 0U : environment->arena->count;
 }
 bool environment_has_current(const Environment *environment, const char *name, size_t length) {
     uint64_t hash;

@@ -380,20 +380,26 @@ decimal_error:
         for (index = 0U; index < count; index++) {
             if (!environment_define(call_environment, declaration->as.function.parameters[index],
                     declaration->as.function.parameter_lengths[index], &arguments[index], true,
-                    declaration->as.function.parameter_spans[index], errors)) return false;
+                    declaration->as.function.parameter_spans[index], errors)) {
+                environment_release_child(call_environment);
+                return false;
+            }
         }
-        if (runtime->call_depth >= LUME_MAX_CALL_DEPTH)
-            return fail(errors, runtime->outer_call_span,
+        if (runtime->call_depth >= LUME_MAX_CALL_DEPTH) {
+            bool failed = fail(errors, runtime->outer_call_span,
                 "Limite de chamadas de funcao atingido.",
                 "Isso pode indicar recursao sem um caso base alcancavel. Confira as condicoes que encerram as chamadas.");
+            environment_release_child(call_environment);
+            return failed;
+        }
         if (runtime->call_depth == 0U) runtime->outer_call_span = span;
         runtime->call_depth++;
         { TraceEvent enter_event=trace_event(TRACE_FUNCTION_ENTER,span,call_environment);enter_event.name=callable->name;enter_event.name_length=strlen(callable->name);emit(runtime,enter_event); }
         result = execute_statements(&declaration->as.function.body->as.block.statements,
             call_environment, runtime, errors);
-        if (result.status == EXEC_ERROR) { runtime->call_depth--; return false; }
-        if (result.status == EXEC_RETURN) { TraceEvent return_event=trace_event(TRACE_FUNCTION_RETURN,span,call_environment);return_event.name=callable->name;return_event.name_length=strlen(callable->name);return_event.after=&result.value;emit(runtime,return_event);runtime->call_depth--;*out=result.value;return true; }
-        *out=value_null();{TraceEvent return_event=trace_event(TRACE_FUNCTION_RETURN,span,call_environment);return_event.name=callable->name;return_event.name_length=strlen(callable->name);return_event.after=out;emit(runtime,return_event);}runtime->call_depth--;return true;
+        if (result.status == EXEC_ERROR) { runtime->call_depth--; environment_release_child(call_environment); return false; }
+        if (result.status == EXEC_RETURN) { TraceEvent return_event=trace_event(TRACE_FUNCTION_RETURN,span,call_environment);return_event.name=callable->name;return_event.name_length=strlen(callable->name);return_event.after=&result.value;emit(runtime,return_event);runtime->call_depth--;*out=result.value;environment_release_child(call_environment);return true; }
+        *out=value_null();{TraceEvent return_event=trace_event(TRACE_FUNCTION_RETURN,span,call_environment);return_event.name=callable->name;return_event.name_length=strlen(callable->name);return_event.after=out;emit(runtime,return_event);}runtime->call_depth--;environment_release_child(call_environment);return true;
     }
 }
 static bool evaluate_call(const Expr *expression, Environment *environment, Runtime *runtime,
@@ -543,11 +549,14 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
             }
         case STMT_BLOCK: {
             Environment *child = environment_new_child(environment);
+            ExecutionResult result;
             if (child == NULL) {
                 (void)fail(errors, statement->span, "Nao foi possivel criar o escopo do bloco.", "Tente um programa menor.");
                 return execution(EXEC_ERROR);
             }
-            return execute_statements(&statement->as.block.statements, child, runtime, errors);
+            result = execute_statements(&statement->as.block.statements, child, runtime, errors);
+            environment_release_child(child);
+            return result;
         }
         case STMT_IF:
             if (!evaluate_condition(statement->as.if_statement.condition, environment,
@@ -605,12 +614,14 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
                     statement->as.for_statement.iterator_name,
                     statement->as.for_statement.iterator_length, &value, false,
                     statement->as.for_statement.iterator_span, errors)) {
+                environment_release_child(loop_environment);
                 return execution(EXEC_ERROR);
             }
             for (;;) {
                 iteration++; {TraceEvent event=trace_event(TRACE_FOR_ITERATION,statement->span,loop_environment);Value iterator=value_integer(current);event.name=statement->as.for_statement.iterator_name;event.name_length=statement->as.for_statement.iterator_length;event.iteration=iteration;event.after=&iterator;emit(runtime,event);}
                 ExecutionResult result = execute_statement(statement->as.for_statement.body, loop_environment, runtime, errors);
                 if (result.status != EXEC_OK) {
+                    environment_release_child(loop_environment);
                     return result;
                 }
                 if (current == final_value) break;
@@ -622,10 +633,11 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
                     (void)fail(errors, statement->as.for_statement.iterator_span,
                         "Nao foi possivel atualizar o iterador interno do laco.",
                         "Isto indica falta de memoria ou erro interno.");
+                    environment_release_child(loop_environment);
                     return execution(EXEC_ERROR);
                 }
             }
-            {TraceEvent event=trace_event(TRACE_FOR_END,statement->span,environment);event.iteration=iteration;emit(runtime,event);}return execution(EXEC_OK);
+            {TraceEvent event=trace_event(TRACE_FOR_END,statement->span,environment);event.iteration=iteration;emit(runtime,event);}environment_release_child(loop_environment);return execution(EXEC_OK);
         }
         case STMT_FUNCTION: return execution(EXEC_OK);
         case STMT_RETURN: {
