@@ -1,4 +1,4 @@
-# Especificação da linguagem Lume 0.2
+# Especificação da linguagem Lume 0.3
 
 Este documento define a sintaxe pretendida para o primeiro interpretador. Itens
 marcados como futuros não fazem parte da implementação inicial.
@@ -42,7 +42,9 @@ alterar a gramática. Nomes nativos predefinidos não podem ser redeclarados no
 escopo global na 0.1.
 
 Palavras reservadas para versões futuras não serão bloqueadas antes de ganhar
-semântica. `em`, `estrutura` e `modulo` ainda podem ser identificadores.
+semântica. `estrutura` e `modulo` ainda podem ser identificadores. `como` é uma
+palavra contextual: continua disponível como identificador, exceto imediatamente
+depois do caminho de um `importe`, onde introduz um alias.
 Na Fase 10, `importe` e `exporte` tornaram-se palavras-chave; esta é uma quebra
 explícita de compatibilidade aceita durante o desenvolvimento da versão 0.1.
 
@@ -298,10 +300,15 @@ contém o import. A extensão pode ser escrita ou omitida, e `.` e `..` são
 normalizados. Imports só aparecem no nível do módulo. Cada caminho normalizado é
 carregado e executado uma vez por sessão.
 
-O binding imutável usa o último componente do caminho. Apenas variáveis,
+Sem alias, o binding imutável usa o último componente do caminho. Com
+`importe "util/texto" como texto_lib`, o binding usa explicitamente
+`texto_lib`. Isso permite usar simultaneamente um módulo e outro nome global,
+como a nativa `texto()`. Apenas variáveis,
 constantes e funções globais marcadas com `exporte` são públicas. O acesso usa
 `modulo.membro`; estado privado e closures permanecem no ambiente próprio do
-módulo. Não existem alias ou reexports nesta versão. `tipo(modulo)` retorna
+módulo. Não existem reexports nesta versão. O alias não altera a identidade nem
+o cache do módulo: o mesmo caminho normalizado continua sendo carregado uma vez
+por sessão. `tipo(modulo)` retorna
 `"modulo"` e `texto(modulo)` produz `<modulo nome>`.
 
 `NEWLINE` e `;` formam terminadores conforme as regras da seção 1. O parser
@@ -311,7 +318,7 @@ aceita terminadores extras entre instruções.
 programa       = terminadores, { declaracao, terminadores }, EOF ;
 declaracao     = importacao | declaracao_exportada | decl_variavel
                | decl_constante | decl_funcao | instrucao ;
-importacao     = "importe", STRING ;
+importacao     = "importe", STRING, [ "como", IDENT ] ;
 declaracao_exportada = "exporte", ( decl_variavel | decl_constante | decl_funcao ) ;
 decl_variavel  = "variavel", IDENT, "=", expressao ;
 decl_constante = "constante", IDENT, "=", expressao ;

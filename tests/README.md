@@ -18,22 +18,28 @@ encadeadas, retorno, recursão, hoisting mútuo, closures e funções nativas.
 
 `test_cli.c`, `test_repl.c` e `test_diagnostics.c` cobrem argumentos e exit
 codes, persistência, multilinha, conversões, recuperação após erro e o renderer
-com localização, fonte, categoria e caret.
+com localização, fonte, categoria e caret. As regressões da v0.3.0 também cobrem
+sugestões inequívocas de nomes e a apresentação dos tipos recebidos em operações
+incompatíveis.
 
 `test_lists.c` cobre literais, índices, aliases, mutação, crescimento, remoção,
 listas aninhadas, formatter, funções, closures, UTF-8, igualdade e ciclos.
 
-`test_education.c` cobre a sequência estruturada de eventos, decisões, laços,
-recursão, listas, renderização numerada, resumo de execuções longas e o modo
-passo a passo com entrada/saída simulada.
+`test_education.c` cobre a sequência estruturada de eventos, leituras de nomes,
+expressões unárias e binárias, decisões, laços, recursão, listas, renderização
+numerada, resumo de execuções longas e o modo passo a passo com entrada/saída
+simulada.
 
 `test_analyzer.c` cobre símbolos não usados, parâmetros, funções referenciadas,
 closures, listas, atribuições, código inalcançável, condições constantes, laços
 vazios, sombreamento, sugestões conservadoras e ausência de execução pela CLI.
+Também verifica inalcançabilidade direta depois de `pare` e `continue`, rejeição
+de sugestões ambíguas ou curtas e uso externo de símbolos exportados.
 
-`test_modules.c` cobre imports e exports, privacidade, cache, estado persistente,
-closures, listas, caminhos relativos e aninhados, ciclos, módulos e membros
-inexistentes, REPL, analyzer e tracing educacional.
+`test_modules.c` cobre imports e exports, aliases, colisões com nativas,
+privacidade, cache, estado persistente, entradas malformadas, closures, listas,
+caminhos relativos e aninhados, ciclos, módulos e membros inexistentes, REPL,
+analyzer e tracing educacional.
 
 `test_project.c` cobre manifesto válido, campos obrigatórios, duplicatas,
 chaves desconhecidas e sugestões, versões, criação sem sobrescrita, execução,
@@ -63,12 +69,23 @@ sequências ANSI, tamanho e leitura de tecla com `RuntimeIO` simulado.
 `test_control_flow.c` também cobre `para ... em`, fotografia diante de mutação,
 `pare`, `continue`, laços aninhados e usos inválidos fora de repetição.
 
+`test_v030.c` cobre os payloads estruturados e a ordem real de avaliação das
+expressões, mapeamento entre argumentos e parâmetros, explicações conceituais de
+variáveis, constantes, condições, funções, listas e controle de laço, além da
+representação limitada de textos e listas. A suíte também reúne regressões de
+diagnósticos de nome e tipo, analyzer, aliases de módulos e biblioteca padrão.
+Um programa de **1.000.000 de iterações** confirma que a explicação permanece em
+streaming: a saída fica limitada, os eventos omitidos são contabilizados e o fim
+estrutural ainda é apresentado sem armazenar o histórico completo.
+
 `test_repl.c` também verifica diagnósticos associados a Sources antigas para
 erros de nome, tipo, índice e closures, seguidos por execução válida na sessão.
 Execuções repetidas de blocos e imports validam que REPL e módulos não acumulam
-ambientes transitórios entre unidades.
+ambientes transitórios entre unidades. Uma função publicada antes de um erro na
+mesma entrada continua válida depois da recuperação, protegendo o lifetime de sua
+AST e Source.
 
-Execute as dezessete suítes na raiz com `make test`.
+Execute as dezoito suítes na raiz com `make test`.
 
 Na integração contínua, o mesmo alvo é executado em Linux com GCC. Antes de uma
 release Windows, `scripts/build-windows.sh` repete o build e todas as suítes

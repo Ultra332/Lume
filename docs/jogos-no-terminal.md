@@ -1,6 +1,6 @@
 # Jogos no terminal
 
-A Lume 0.2 combina `lume/terminal`, `lume/tempo` e `lume/aleatorio` para criar
+A Lume 0.3 combina `lume/terminal`, `lume/tempo` e `lume/aleatorio` para criar
 projetos interativos sem bibliotecas externas. O exemplo completo está em
 [`exemplos/projetos/cobrinha`](../exemplos/projetos/cobrinha).
 

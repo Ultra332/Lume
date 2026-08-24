@@ -34,6 +34,9 @@ bool environment_define_native(Environment *environment, const char *name, size_
                                const Value *value, SourceSpan span, ErrorList *errors);
 bool environment_get(const Environment *environment, const char *name, size_t length,
                      Value *out, SourceSpan use_span, ErrorList *errors);
+/* Valida existencia e mutabilidade sem copiar o Value. */
+bool environment_validate_assignment(const Environment *environment,const char *name,
+    size_t length,SourceSpan assignment_span,ErrorList *errors);
 bool environment_assign(Environment *environment, const char *name, size_t length,
                         const Value *value, SourceSpan assignment_span, ErrorList *errors);
 /* Runtime-only update for immutable bindings owned by control-flow machinery. */

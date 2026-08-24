@@ -78,7 +78,10 @@ struct Stmt {
         } function;
         struct { Expr *value; } return_statement;
         struct { Expr *target; Expr *index; Expr *value; } index_assignment;
-        struct { char *path; size_t path_length; char *binding; size_t binding_length; SourceSpan path_span; } import;
+        struct {
+            char *path; size_t path_length; char *binding; size_t binding_length;
+            SourceSpan path_span; SourceSpan binding_span; bool has_alias;
+        } import;
     } as;
 };
 typedef struct { StmtArray statements; } Program;
@@ -107,6 +110,7 @@ Stmt *stmt_new_function(const char *name, size_t name_length, SourceSpan name_sp
 Stmt *stmt_new_return(Expr *value, SourceSpan span);
 Stmt *stmt_new_index_assignment(Expr *target, Expr *index, Expr *value, SourceSpan span);
 Stmt *stmt_new_import(const char *path, size_t path_length, SourceSpan path_span,
+                      const char *alias, size_t alias_length, SourceSpan alias_span,
                       SourceSpan span);
 bool stmt_array_add(StmtArray *array, Stmt *statement);
 void stmt_array_free(StmtArray *array);

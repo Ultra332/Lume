@@ -5,7 +5,7 @@ LDFLAGS ?=
 LDLIBS ?= -lm
 
 TARGET ?= lume
-TEST_TARGETS := test_lexer test_expression test_program test_control_flow test_functions test_cli test_repl test_diagnostics test_lists test_education test_analyzer test_modules test_project test_dependencies test_stdlib test_stability test_v020
+TEST_TARGETS := test_lexer test_expression test_program test_control_flow test_functions test_cli test_repl test_diagnostics test_lists test_education test_analyzer test_modules test_project test_dependencies test_stdlib test_stability test_v020 test_v030
 SOURCES := $(wildcard src/*.c)
 CORE_SOURCES := $(filter-out src/main.c,$(SOURCES))
 OBJECTS := $(SOURCES:.c=.o)
@@ -68,6 +68,9 @@ test_stability: $(CORE_OBJECTS) tests/test_stability.o
 test_v020: $(CORE_OBJECTS) tests/test_v020.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+test_v030: $(CORE_OBJECTS) tests/test_v030.o
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
 src/%.o: src/%.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
@@ -92,6 +95,7 @@ test: $(TEST_TARGETS)
 	./test_stdlib
 	./test_stability
 	./test_v020
+	./test_v030
 
 sanitize: CFLAGS += -g -O1 -fno-omit-frame-pointer -fsanitize=address,undefined
 sanitize: LDFLAGS += -fsanitize=address,undefined
@@ -113,6 +117,7 @@ sanitize: clean $(TEST_TARGETS)
 	./test_stdlib
 	./test_stability
 	./test_v020
+	./test_v030
 
 clean:
 	$(RM) $(OBJECTS) tests/*.o $(TARGET) $(TARGET).exe $(TEST_TARGETS) $(addsuffix .exe,$(TEST_TARGETS))

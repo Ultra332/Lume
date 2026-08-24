@@ -29,9 +29,11 @@ diagnósticos visuais, conversões e tracing educacional.
 - `repl`: prompts, comandos e acumulação de entrada multilinha.
 - `session`: ambiente persistente e ownership das unidades interativas.
 - `diagnostic`: apresentação terminal de erros estruturados, fonte e caret.
-- `trace`: eventos educacionais estruturados e callback opcional.
-- `education`: renderer numerado, inspeção dos escopos ativos, pilha lógica e
-  controle do modo passo a passo sobre `RuntimeIO` injetável.
+- `trace`: eventos educacionais estruturados, payloads emprestados e callback
+  síncrono opcional.
+- `education`: renderer conceitual e limitado de eventos e valores, inspeção dos
+  escopos ativos, pilha lógica e controle do modo passo a passo sobre `RuntimeIO`
+  injetável.
 - `analyzer`: travessia estática da AST, escopos e símbolos próprios,
   diagnósticos educacionais com severidade e resumo estrutural.
 - `module`: resolução portátil de caminhos locais, `LumeModule`, registry/cache,
@@ -184,9 +186,14 @@ propaga `retorne` com ownership explícito.
 ### Erros
 
 `LumeError` separa categoria, mensagem, sugestão e `SourceSpan`. Lexer, parser e
-runtime produzem dados; uma camada de diagnóstico os renderiza. O modo
-`--educacional` poderá anexar eventos a uma interface de tracing opcional, sem
-misturar textos educativos com a semântica.
+runtime produzem dados; uma camada de diagnóstico os renderiza. Detalhes seguros
+podem incluir o nome citado, uma substituição próxima e os tipos recebidos pelos
+operandos. `ErrorList` copia os nomes dinâmicos que precisa reter; mensagens,
+sugestões explicativas e nomes de tipos são literais estáticos.
+
+O diagnóstico normal já é educacional sem misturar apresentação com semântica.
+Por isso a v0.3.0 não cria `--explicar-erros`: os mesmos dados estruturados são
+apresentados pelo caminho comum da CLI, do REPL e dos módulos.
 
 ### Sessão interativa e tracing
 
@@ -194,14 +201,31 @@ misturar textos educativos com a semântica.
 Unidades comuns são liberadas após executar. Uma unidade que contém declaração
 de função retém AST e Source até o encerramento, pois `Callable` referencia o
 corpo na AST e seus spans continuam úteis. Isso mantém closures seguras sem
-reter toda entrada digitada.
+reter toda entrada digitada. Se a unidade já publicou uma função e uma instrução
+posterior falha, ela também é retida: o callable foi instalado pelo hoisting e
+continuará acessível após a recuperação do REPL.
 
 `RuntimeTrace` recebe eventos estruturados de início/fim, declaração,
-atribuição, decisão, laços, chamada, retorno, nativas e operações de listas. Os
-campos apontados são empréstimos válidos somente durante o callback síncrono;
-consumidores que retenham dados precisam copiá-los. O runtime normal usa callback
-nulo. `--explicar` instala um renderer não interativo e `--passo` acrescenta
-pausas dirigidas pela mesma abstração `RuntimeIO` usada nos testes.
+atribuição, leitura de identificador, expressão unária ou binária, decisão,
+laços, chamada, retorno, nativas e operações de listas. Os novos eventos de
+expressão carregam ponteiro para o nó AST, operandos, resultado e a indicação de
+curto-circuito. Chamadas carregam argumentos e o statement da função, permitindo
+relacioná-los aos parâmetros; declarações e atribuições carregam a expressão que
+produziu o valor. `SourceSpan.source` identifica corretamente a unidade principal
+ou importada que originou o acontecimento.
+
+Todos os ponteiros de `TraceEvent` — AST, `Value`, argumentos, nomes e
+`Environment` — são empréstimos válidos somente durante o callback síncrono. O
+renderer não guarda o histórico nem retém o ambiente; quando precisa manter os
+nomes da pilha lógica entre callbacks, copia-os para armazenamento próprio e
+limitado. Outro consumidor que queira reter um dado precisa copiá-lo dentro do
+callback.
+
+O runtime normal usa callback nulo e não produz os payloads adicionais de
+expressão. `--explicar` instala um renderer automático e `--passo` acrescenta
+pausas dirigidas pela mesma abstração `RuntimeIO` usada nos testes. Dessa forma,
+os três caminhos compartilham um único interpretador e a instrumentação mais cara
+fica desativada fora dos modos educacionais.
 
 Na v0.2.0, o resultado discriminado da execução também possui `EXEC_BREAK` e
 `EXEC_CONTINUE`. Blocos e condicionais propagam esses estados; o laço mais
@@ -213,8 +237,21 @@ normal antes de iterar, liberada em todos os caminhos de saída.
 A pilha exibida é lógica: a profundidade é mantida pelo interpretador ao entrar
 e sair de funções Lume, sem examinar a pilha C. A visualização percorre somente o
 ambiente ativo recebido no evento e seus pais; frames antigos retidos pela arena
-para closures não aparecem. O renderer limita explicações longas a 200 eventos,
-mas o programa continua sendo executado integralmente.
+para closures não aparecem. No modo passo a passo, `Enter`, `v`, `p`, `c` e `q`
+controlam avanço, variáveis, pilha, continuação automática e saída.
+
+O renderer processa eventos em streaming. `--explicar` detalha até 160 eventos;
+depois preserva no máximo uma pequena janela adicional de encerramentos de laço
+e sempre apresenta o encerramento do programa, informando quantos eventos
+intermediários foram omitidos. `--passo` mostra cada evento enquanto avança
+manualmente e aplica a mesma compactação depois de `c`. O programa continua
+sendo executado integralmente.
+
+A representação educacional de `Value` também é limitada e não altera o valor:
+textos mostram no máximo 72 bytes em uma fronteira UTF-8, listas mostram seis
+elementos, e o detalhamento de listas aninhadas para no segundo nível. Contagens
+totais tornam a truncagem explícita. Funções e módulos são mostrados por nome,
+sem endereços internos e sem alocação permanente por evento.
 
 O interpretador também limita a 200 as chamadas Lume simultâneas. Esse limite é
 separado do corte visual do renderer e existe para impedir que recursão sem caso
@@ -231,11 +268,15 @@ mútuas; funções aninhadas resolvem nomes nos pais, cobrindo closures.
 
 Os diagnósticos têm severidade (`erro`, `aviso`, `informação`), código de
 categoria e `SourceSpan`. A análise de fluxo é conservadora: inalcançabilidade é
-propagada por `retorne` direto ou por `se` cujos dois ramos retornam;
+propagada por `retorne`, `pare` ou `continue` diretos no mesmo bloco, ou por `se`
+cujos dois ramos retornam;
 sobrescritas são apontadas apenas em sequência linear segura. Condições são
 avaliadas somente para booleanos literais, `nao` e comparações numéricas puras.
-Sugestões de nome consideram apenas símbolos visíveis com até 64 bytes e
-distância de edição máxima 2.
+Sugestões de nome consideram apenas símbolos visíveis com até 64 bytes. Nomes
+com menos de três bytes não recebem sugestão; o limite de distância é 1 para
+nomes com menos de cinco bytes e 2 para os demais, e empates são rejeitados.
+Símbolos exportados contam como usados, pois seu consumidor pode estar em outra
+unidade.
 
 ### Módulos e múltiplos arquivos
 
@@ -258,6 +299,12 @@ membro consulta exclusivamente a tabela de exports. O analyzer usa a mesma
 resolução e cache, mas apenas carrega, parseia e valida ASTs, sem executar código.
 Tracing recebe eventos de início e conclusão do import, e chamadas exportadas
 continuam usando o ambiente capturado no módulo de origem.
+
+O nome local do import fica no statement da AST: pode ser derivado do caminho ou
+fornecido por `como alias`. Esse nome não participa da chave do `ModuleRegistry`;
+aliases diferentes para o mesmo caminho reutilizam a mesma instância. O analyzer
+registra o binding em sua própria tabela de símbolos, sem reutilizar o
+`Environment` do runtime.
 
 ### Projetos formais
 
@@ -334,7 +381,10 @@ Convenção pretendida para APIs C:
 
 `Source` possui nome e bytes; ambos deixam de ser válidos em `source_free`.
 `TokenArray` possui o vetor, mas não a fonte. `ErrorList` possui seu vetor;
-mensagem e sugestão são textos estáticos nesta fase.
+`subject` e `replacement` são cópias próprias liberadas por `error_list_free`,
+enquanto mensagem, sugestão explicativa e nomes de tipos são textos estáticos.
+O ponteiro `SourceSpan.source` continua emprestado e exige que a Source viva até
+o fim da apresentação do diagnóstico.
 
 Falhas de alocação são propagadas por retorno booleano. O lexer tenta registrar
 `LUME_ERROR_MEMORY`; se isso também falhar, retorna `false` sem diagnóstico e o

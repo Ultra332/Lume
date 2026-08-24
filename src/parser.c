@@ -65,6 +65,8 @@ static void parser_error(Parser *parser, SourceSpan span, const char *message, c
     error.kind = LUME_ERROR_SYNTAX; error.span = span;
     error.message = message; error.suggestion = suggestion;
     error.subject = NULL; error.subject_length = 0U;
+    error.replacement=NULL;error.replacement_length=0U;
+    error.left_type=NULL;error.right_type=NULL;
     if (!error_list_add(parser->errors, error)) {
         error.kind = LUME_ERROR_MEMORY;
         error.message = "Nao foi possivel reservar memoria para o diagnostico.";
@@ -651,7 +653,28 @@ static Stmt *parse_loop_control(Parser *parser, const Token *keyword, bool is_br
     if (statement == NULL) parser_memory_error(parser, keyword->span);
     return statement;
 }
-static Stmt *parse_import(Parser *parser,const Token *keyword){const Token *path;Value decoded=value_null();Stmt *statement;SourceSpan span;if(parser->block_depth!=0U||parser->function_depth!=0U){parser_error(parser,keyword->span,"'importe' so pode ser usado no nivel principal do modulo.","Mova o import para o inicio do arquivo.");return NULL;}if(!require_token(parser,TOKEN_STRING,&path,"Era esperado um caminho de modulo depois de 'importe'.","Use: importe \"matematica\"."))return NULL;if(!value_string_decode(token_lexeme(path),token_length(path),&decoded)){parser_memory_error(parser,path->span);return NULL;}span.start=keyword->span.start;span.end=path->span.end;span.source=keyword->span.source;statement=stmt_new_import(decoded.as.string.bytes,decoded.as.string.length,path->span,span);value_free(&decoded);if(statement==NULL)parser_memory_error(parser,span);return statement;}
+static bool token_is_word(const Token *token,const char *word){
+    size_t length=strlen(word);
+    return token!=NULL&&token->type==TOKEN_IDENTIFIER&&token_length(token)==length&&
+        memcmp(token_lexeme(token),word,length)==0;
+}
+static Stmt *parse_import(Parser *parser,const Token *keyword){
+    const Token *path,*alias=NULL,*next;Value decoded=value_null();Stmt *statement;SourceSpan span,alias_span;
+    alias_span=keyword->span;
+    if(parser->block_depth!=0U||parser->function_depth!=0U){parser_error(parser,keyword->span,"'importe' so pode ser usado no nivel principal do modulo.","Mova o import para o inicio do arquivo.");return NULL;}
+    if(!require_token(parser,TOKEN_STRING,&path,"Era esperado um caminho de modulo depois de 'importe'.","Use: importe \"matematica\"."))return NULL;
+    next=peek_token(parser);
+    if(token_is_word(next,"como")){
+        parser->current++;
+        if(!require_token(parser,TOKEN_IDENTIFIER,&alias,"Era esperado um identificador depois de 'como'.","Use: importe \"lume/matematica\" como mat."))return NULL;
+        alias_span=alias->span;
+    }
+    if(!value_string_decode(token_lexeme(path),token_length(path),&decoded)){parser_memory_error(parser,path->span);return NULL;}
+    span.start=keyword->span.start;span.end=alias!=NULL?alias->span.end:path->span.end;span.source=keyword->span.source;
+    statement=stmt_new_import(decoded.as.string.bytes,decoded.as.string.length,path->span,
+        alias==NULL?NULL:token_lexeme(alias),alias==NULL?0U:token_length(alias),alias_span,span);
+    value_free(&decoded);if(statement==NULL)parser_memory_error(parser,span);return statement;
+}
 static Stmt *parse_block(Parser *parser, const Token *left_brace) {
     StmtArray statements = {NULL, 0U, 0U};
     const Token *right_brace;

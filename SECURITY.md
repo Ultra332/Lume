@@ -2,7 +2,7 @@
 
 ## Versões suportadas
 
-Enquanto a v0.1.0 estiver em avaliação, somente a versão mais recente do ramo principal receberá correções de segurança.
+Durante a série experimental 0.x, somente a versão mais recente do ramo principal receberá correções de segurança.
 
 ## Relatando uma vulnerabilidade
 
@@ -15,4 +15,3 @@ No relato, inclua versão, plataforma, passos mínimos de reprodução, impacto 
 ## Escopo
 
 Falhas de memória, travamentos causados por entrada não confiável, escape de caminhos de projeto, resolução indevida de módulos e exposição de dados são exemplos relevantes. Erros puramente pedagógicos ou sugestões de recursos devem usar issues comuns.
-

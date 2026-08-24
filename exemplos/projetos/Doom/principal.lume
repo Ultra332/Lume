@@ -1,0 +1,218 @@
+// Mini raycaster estilo Doom/Wolfenstein 3D, escrito inteiramente em Lume.
+// A trigonometria usa diretamente as funcoes nativas de lume/matematica.
+importe "lume/matematica"
+importe "lume/terminal"
+importe "lume/tempo"
+importe "bsp" como bsp
+
+// Mapa como lista de listas de inteiros (0 = vazio, 1 = parede).
+// Evita importar lume/texto, cujo binding colide com a funcao nativa texto().
+funcao eh_parede(mapa, x, y) {
+    variavel linha = inteiro(matematica.piso(y))
+    variavel coluna = inteiro(matematica.piso(x))
+    se linha < 0 {
+        retorne verdadeiro
+    }
+    se linha >= tamanho(mapa) {
+        retorne verdadeiro
+    }
+    variavel fileira = mapa[linha]
+    se coluna < 0 {
+        retorne verdadeiro
+    }
+    se coluna >= tamanho(fileira) {
+        retorne verdadeiro
+    }
+    retorne fileira[coluna] == 1
+}
+
+funcao sombra(distancia, paleta) {
+    se distancia < 2.5 {
+        retorne paleta[0]
+    }
+    se distancia < 5.0 {
+        retorne paleta[1]
+    }
+    se distancia < 8.0 {
+        retorne paleta[2]
+    }
+    se distancia < 11.0 {
+        retorne paleta[3]
+    }
+    se distancia < 14.0 {
+        retorne paleta[4]
+    }
+    retorne paleta[5]
+}
+
+// Marcha o raio em passos fixos ate bater numa parede ou estourar a distancia
+// maxima. E o metodo mais simples de raycasting (nao e DDA), trocando
+// eficiencia por clareza pedagogica.
+// dx/dy sao calculados uma unica vez fora do laco de marcha: calcular
+// seno/cosseno a cada passo (em vez de uma vez por raio) chegou a deixar
+// este programa ~50x mais lento durante os testes -- otimizacao que importa
+// de verdade num interpretador sem essa otimizacao automatica.
+funcao lancar_raio(mapa, px, py, angulo_raio, passo, distancia_maxima) {
+    variavel dx = matematica.cosseno(angulo_raio)
+    variavel dy = matematica.seno(angulo_raio)
+    variavel distancia = 0.0
+    enquanto distancia < distancia_maxima {
+        distancia = distancia + passo
+        variavel tx = px + dx * distancia
+        variavel ty = py + dy * distancia
+        se eh_parede(mapa, tx, ty) {
+            retorne distancia
+        }
+    }
+    retorne distancia_maxima
+}
+
+funcao renderizar_quadro(mapa, px, py, angulo, largura, altura, fov, passo, distancia_maxima, paleta) {
+    variavel linhas_saida = []
+    variavel meio_fov = fov / 2.0
+    variavel alturas = []
+
+    para coluna de 0 ate largura - 1 {
+        variavel fracao = decimal(coluna) / decimal(largura - 1)
+        variavel angulo_raio = angulo - meio_fov + fov * fracao
+        variavel distancia = lancar_raio(mapa, px, py, angulo_raio, passo, distancia_maxima)
+        variavel correcao = matematica.cosseno(angulo_raio - angulo)
+        se correcao < 0.2 {
+            correcao = 0.2
+        }
+        variavel distancia_corrigida = distancia * correcao
+        variavel altura_parede = inteiro(matematica.piso(decimal(altura) / distancia_corrigida))
+        se altura_parede > altura {
+            altura_parede = altura
+        }
+        adicione(alturas, [altura_parede, distancia_corrigida])
+    }
+
+    para linha de 0 ate altura - 1 {
+        variavel texto_linha = ""
+        para coluna de 0 ate largura - 1 {
+            variavel info = alturas[coluna]
+            variavel altura_parede = info[0]
+            variavel distancia_corrigida = info[1]
+            variavel meio = altura / 2
+            variavel topo = meio - altura_parede / 2
+            variavel base = meio + altura_parede / 2
+            se linha >= topo e linha <= base {
+                texto_linha = texto_linha + sombra(distancia_corrigida, paleta)
+            } senao {
+                se linha < meio {
+                    texto_linha = texto_linha + paleta[5]
+                } senao {
+                    texto_linha = texto_linha + paleta[6]
+                }
+            }
+        }
+        adicione(linhas_saida, texto_linha)
+    }
+    retorne linhas_saida
+}
+
+funcao desenhar(linhas_saida, fps) {
+    variavel quadro = ""
+    para indice de 0 ate tamanho(linhas_saida) - 1 {
+        quadro = quadro + linhas_saida[indice] + "\n"
+    }
+    variavel fps_inteiro = inteiro(matematica.piso(fps))
+    variavel status = " DOOM BSP | WASD move | Q sai | FPS: " + texto(fps_inteiro)
+    quadro = quadro + terminal.estilize(status, "verde_claro", "preto")
+    terminal.posicione(1, 1)
+    escreva(quadro)
+}
+
+funcao principal() {
+    variavel mundo = bsp.gerar(31, 21, 4)
+    variavel mapa = mundo[0]
+    variavel px = mundo[1]
+    variavel py = mundo[2]
+    variavel angulo = 0.0
+    variavel largura = 60
+    variavel altura = 22
+    variavel fov = matematica.PI / 3.0
+    variavel passo = 0.05
+    variavel distancia_maxima = 16.0
+    variavel velocidade = 0.15
+    variavel velocidade_giro = 0.10
+
+    variavel tamanho_terminal = terminal.tamanho()
+    se tamanho_terminal[0] < largura ou tamanho_terminal[1] < altura + 2 {
+        escreva("Terminal pequeno demais para o DOOM BSP.")
+        escreva("Use pelo menos " + texto(largura) + " colunas por " + texto(altura + 2) + " linhas.")
+        retorne
+    }
+
+    // Os estilos sao montados uma vez e reutilizados em todos os pixels.
+    variavel paleta = [
+        terminal.estilize("@", "branco_claro", "preto"),
+        terminal.estilize("#", "branco", "preto"),
+        terminal.estilize("+", "amarelo_claro", "preto"),
+        terminal.estilize(";", "vermelho_claro", "preto"),
+        terminal.estilize(".", "cinza", "preto"),
+        terminal.estilize(" ", "branco", "azul"),
+        terminal.estilize(",", "cinza", "preto")
+    ]
+
+    terminal.limpe()
+    terminal.oculte_cursor()
+
+    variavel quadros = 0
+    variavel inicio = tempo.timestamp()
+    variavel continuar = verdadeiro
+
+    enquanto continuar {
+        variavel tecla = terminal.tecla()
+        se tecla != nulo {
+            se tecla == "q" {
+                continuar = falso
+            }
+            se tecla == "w" {
+                variavel nx = px + matematica.cosseno(angulo) * velocidade
+                variavel ny = py + matematica.seno(angulo) * velocidade
+                se eh_parede(mapa, nx, ny) == falso {
+                    px = nx
+                    py = ny
+                }
+            }
+            se tecla == "s" {
+                variavel nx = px - matematica.cosseno(angulo) * velocidade
+                variavel ny = py - matematica.seno(angulo) * velocidade
+                se eh_parede(mapa, nx, ny) == falso {
+                    px = nx
+                    py = ny
+                }
+            }
+            se tecla == "a" {
+                angulo = angulo - velocidade_giro
+            }
+            se tecla == "d" {
+                angulo = angulo + velocidade_giro
+            }
+        }
+
+        variavel linhas_saida = renderizar_quadro(mapa, px, py, angulo, largura, altura, fov, passo, distancia_maxima, paleta)
+        quadros = quadros + 1
+        variavel agora = tempo.timestamp()
+        variavel decorrido = agora - inicio
+        variavel fps = 0
+        se decorrido > 0 {
+            fps = quadros / decorrido
+        }
+        desenhar(linhas_saida, fps)
+
+        se quadros >= 2000 {
+            continuar = falso
+        }
+
+        tempo.durma(16)
+    }
+
+    terminal.resetar_cor()
+    terminal.mostre_cursor()
+    escreva("Encerrado. Total de quadros: " + texto(quadros))
+}
+
+principal()

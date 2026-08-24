@@ -96,11 +96,47 @@ static bool is_native_name(const char *name, size_t length) {
         (length == 8U && memcmp(name, "adicione", 8U) == 0) ||
         (length == 6U && memcmp(name, "remova", 6U) == 0);
 }
+static size_t edit_distance_limited(const char *left,size_t left_length,
+                                    const char *right,size_t right_length) {
+    size_t previous[65],current[65],i,j;
+    if(left_length>64U||right_length>64U||left_length>right_length+2U||
+            right_length>left_length+2U)return 3U;
+    for(j=0U;j<=right_length;j++)previous[j]=j;
+    for(i=1U;i<=left_length;i++){
+        current[0]=i;
+        for(j=1U;j<=right_length;j++){
+            size_t replace=previous[j-1U]+(left[i-1U]==right[j-1U]?0U:1U);
+            size_t remove=previous[j]+1U,insert=current[j-1U]+1U;
+            current[j]=replace<remove?replace:remove;
+            if(insert<current[j])current[j]=insert;
+        }
+        for(j=0U;j<=right_length;j++)previous[j]=current[j];
+    }
+    return previous[right_length];
+}
+static const Binding *closest_binding(const Environment *environment,
+                                      const char *name,size_t length) {
+    const Binding *best=NULL;size_t best_distance=3U,allowed=length>=5U?2U:1U;
+    bool tied=false;
+    if(length<3U)return NULL;
+    while(environment!=NULL){size_t index;for(index=0U;index<environment->capacity;index++){
+        const Binding *candidate=&environment->entries[index];size_t distance;
+        if(!candidate->occupied)continue;
+        distance=edit_distance_limited(name,length,candidate->name,candidate->name_length);
+        if(distance<best_distance){best=candidate;best_distance=distance;tied=false;}
+        else if(distance==best_distance&&distance<=allowed&&best!=NULL&&
+                (best->name_length!=candidate->name_length||
+                 memcmp(best->name,candidate->name,candidate->name_length)!=0))tied=true;
+    }environment=environment->parent;}
+    return !tied&&best_distance<=allowed?best:NULL;
+}
 static bool environment_error(ErrorList *errors, LumeErrorKind kind, SourceSpan span,
                               const char *message, const char *suggestion) {
     LumeError error;
     error.kind = kind; error.span = span; error.message = message; error.suggestion = suggestion;
     error.subject = NULL; error.subject_length = 0U;
+    error.replacement=NULL;error.replacement_length=0U;
+    error.left_type=NULL;error.right_type=NULL;
     (void)error_list_add(errors, error);
     return false;
 }
@@ -110,8 +146,21 @@ static bool environment_name_error(ErrorList *errors, LumeErrorKind kind, Source
     LumeError error;
     error.kind = kind; error.span = span; error.message = message; error.suggestion = suggestion;
     error.subject = name; error.subject_length = length;
+    error.replacement=NULL;error.replacement_length=0U;
+    error.left_type=NULL;error.right_type=NULL;
     (void)error_list_add(errors, error);
     return false;
+}
+static bool environment_missing_name_error(const Environment *environment,ErrorList *errors,
+                                            SourceSpan span,const char *name,size_t length,
+                                            const char *message,const char *suggestion) {
+    const Binding *closest=closest_binding(environment,name,length);LumeError error;
+    error.kind=LUME_ERROR_NAME;error.span=span;error.message=message;
+    error.suggestion=suggestion;error.subject=name;error.subject_length=length;
+    error.replacement=closest==NULL?NULL:closest->name;
+    error.replacement_length=closest==NULL?0U:closest->name_length;
+    error.left_type=NULL;error.right_type=NULL;
+    (void)error_list_add(errors,error);return false;
 }
 
 void environment_init(Environment *environment, Environment *parent) {
@@ -238,7 +287,10 @@ bool environment_define(Environment *environment, const char *name, size_t lengt
     slot = find_slot(environment->entries, environment->capacity, name, length, hash);
     slot->name = name_copy; slot->name_length = length; slot->hash = hash;
     slot->value = value_copy_item; slot->mutable = mutable; slot->occupied = true;
-    slot->declaration_span = declaration_span; environment->count++;
+    slot->declaration_span = declaration_span;
+    /* Bindings comuns sobrevivem a unidade do REPL, mas nao possuem a Source.
+       O campo ainda preserva offset/linha/coluna sem manter ponteiro pendente. */
+    slot->declaration_span.source = NULL; environment->count++;
     return true;
 }
 bool environment_define_native(Environment *environment, const char *name, size_t length,
@@ -267,8 +319,31 @@ bool environment_get(const Environment *environment, const char *name, size_t le
         }
         current = current->parent;
     }
-    return environment_name_error(errors, LUME_ERROR_NAME, use_span, name, length,
+    return environment_missing_name_error(environment,errors,use_span,name,length,
         "A variavel usada nao foi definida.", "Declare-a com 'variavel nome = valor' antes de usa-la.");
+}
+bool environment_validate_assignment(const Environment *environment,const char *name,
+                                     size_t length,SourceSpan assignment_span,
+                                     ErrorList *errors) {
+    const Environment *current=environment;
+    uint64_t hash;
+    if(name==NULL||errors==NULL)return false;
+    hash=hash_name(name,length);
+    while(current!=NULL){
+        const Binding *binding=find_existing(current,name,length,hash);
+        if(binding!=NULL){
+            if(!binding->mutable)
+                return environment_name_error(errors,LUME_ERROR_ASSIGNMENT,
+                    assignment_span,name,length,
+                    "Nao e possivel alterar uma constante.",
+                    "Remova a atribuicao ou use uma variavel.");
+            return true;
+        }
+        current=current->parent;
+    }
+    return environment_missing_name_error(environment,errors,assignment_span,name,length,
+        "Nao e possivel atribuir a um nome que nao foi definido.",
+        "Declare a variavel antes da atribuicao.");
 }
 bool environment_assign(Environment *environment, const char *name, size_t length,
                         const Value *value, SourceSpan assignment_span, ErrorList *errors) {
@@ -291,7 +366,7 @@ bool environment_assign(Environment *environment, const char *name, size_t lengt
         }
         current = current->parent;
     }
-    return environment_name_error(errors, LUME_ERROR_NAME, assignment_span, name, length,
+    return environment_missing_name_error(environment,errors,assignment_span,name,length,
         "Nao e possivel atribuir a um nome que nao foi definido.",
         "Declare a variavel antes da atribuicao.");
 }

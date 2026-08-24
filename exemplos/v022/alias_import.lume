@@ -1,0 +1,7 @@
+importe "lume/texto" como txt
+
+variavel partes = txt.separe("um,dois,tres", ",")
+
+para parte em partes {
+    escreva(parte)
+}

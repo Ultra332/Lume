@@ -80,10 +80,16 @@ static bool retain(LumeSession *session, Program *program, Source *source) {
     session->programs[session->retained_count] = program; session->sources[session->retained_count] = source;
     session->retained_count++; return true;
 }
+static void release_last_reservation(LumeSession *session) {
+    if (session->retained_count == 0U) return;
+    session->retained_count--;
+    session->programs[session->retained_count]=NULL;
+    session->sources[session->retained_count]=NULL;
+}
 static bool session_execute_internal(LumeSession *session, const char *name, const char *text,
                      size_t length, bool print_expression, bool suppress_null_call,
                      Source **error_source, ErrorList *errors) {
-    Source *source = memory_allocate(sizeof(*source)); TokenArray tokens; Program *program = NULL; bool ok;
+    Source *source = memory_allocate(sizeof(*source)); TokenArray tokens; Program *program = NULL; bool ok,retained=false,published=false;
     Value result = value_null();
     if (source == NULL) return false;
     source_init(source); token_array_init(&tokens); *error_source = source;
@@ -103,15 +109,34 @@ static bool session_execute_internal(LumeSession *session, const char *name, con
             value_print(session->io.output, &result); fputc('\n', session->io.output);
         }
         value_free(&result);
-    } else if (ok) { LumeModule current; memset(&current,0,sizeof(current)); current.path=(char *)name;
-        ok=interpreter_execute_program_with_modules(program,&session->environment,&session->io,NULL,&session->modules,&current,errors); }
-    token_array_free(&tokens);
-    if (ok && program_has_function(program)) {
-        if (!retain(session, program, source)) ok = false;
     } else if (ok) {
+        LumeModule current;
+        /* Reserve o lifetime antes de publicar Callables no Environment. Assim,
+           uma eventual falha de memoria em retain nunca deixa o ambiente com
+           ponteiros para uma AST que seria liberada logo depois. */
+        if (program_has_function(program)) {
+            retained=retain(session,program,source);
+            if (!retained) ok=false;
+        }
+        if (ok) {
+            memset(&current,0,sizeof(current)); current.path=(char *)name;
+            ok=interpreter_execute_program_with_modules_tracking(program,&session->environment,
+                &session->io,NULL,&session->modules,&current,source,&published,errors);
+        }
+        if (retained && !published) {
+            release_last_reservation(session); retained=false;
+        } else if (retained) {
+            *error_source=NULL;
+        }
+    }
+    token_array_free(&tokens);
+    /* Funcoes sao preparadas antes dos demais statements. Mesmo que uma
+       instrucao posterior falhe, o ambiente pode conter Callables que
+       emprestam a AST desta unidade; Program e Source ficam retidos juntos. */
+    if (ok && !retained) {
         program_free(program); source_free(source); memory_free(source); *error_source = NULL;
     }
-    if (!ok && program != NULL) program_free(program);
+    if (!ok && !retained && program != NULL) program_free(program);
     return ok;
 }
 bool session_execute(LumeSession *session, const char *name, const char *text, size_t length,

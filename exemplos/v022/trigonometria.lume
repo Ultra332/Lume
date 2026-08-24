@@ -1,0 +1,7 @@
+importe "lume/matematica" como mat
+
+escreva(mat.seno(mat.PI / 2))
+escreva(mat.cosseno(0))
+escreva(mat.tangente(mat.PI / 4))
+escreva(mat.radianos(180))
+escreva(mat.graus(mat.PI))

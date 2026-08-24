@@ -22,5 +22,15 @@ void diagnostic_render(FILE *stream, const Source *source, const LumeError *erro
     if (error->subject != NULL) {
         fputs("\nNome: '", stream); fwrite(error->subject, 1U, error->subject_length, stream); fputs("'\n", stream);
     }
+    if (error->replacement != NULL) {
+        fputs("\nTalvez voce quisesse usar '", stream);
+        fwrite(error->replacement,1U,error->replacement_length,stream);
+        fputs("'.\n",stream);
+    }
+    if (error->left_type != NULL || error->right_type != NULL) {
+        fputs("\nTipos recebidos:\n",stream);
+        if(error->left_type!=NULL)fprintf(stream,"  Esquerda: %s\n",error->left_type);
+        if(error->right_type!=NULL)fprintf(stream,"  Direita: %s\n",error->right_type);
+    }
     if (error->suggestion != NULL) fprintf(stream, "\nDica:\n%s\n", error->suggestion);
 }

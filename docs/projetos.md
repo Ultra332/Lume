@@ -52,6 +52,21 @@ Somente arquivos `.lume` diretamente dentro de `tests/` são considerados;
 subdiretórios não são percorridos. Os nomes são ordenados lexicograficamente.
 Cada arquivo roda como script independente e não precisa de manifesto próprio.
 
+## Alias de módulo
+
+O nome local padrão continua sendo o último componente do caminho. Quando esse
+nome colide ou quando um nome menor deixa o código mais claro, use `como`:
+
+```lume
+importe "lume/texto" como texto_lib
+
+escreva(texto(123))
+escreva(texto_lib.maiusculo("lume"))
+```
+
+Aliases diferentes não carregam novamente o mesmo módulo; o cache usa o caminho
+normalizado do arquivo ou módulo padrão.
+
 Em caso de sucesso, a saída do script é ocultada e aparece apenas o resumo. Em
 caso de falha, o diagnóstico e a saída capturada são mostrados. Nenhum teste
 encontrado é sucesso; qualquer arquivo com erro faz o comando retornar código

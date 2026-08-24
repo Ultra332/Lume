@@ -48,6 +48,8 @@ static bool report_error(Lexer *lexer, const char *message, const char *suggesti
     error.message = message;
     error.suggestion = suggestion;
     error.subject = NULL; error.subject_length = 0U;
+    error.replacement=NULL;error.replacement_length=0U;
+    error.left_type=NULL;error.right_type=NULL;
     return error_list_add(lexer->errors, error);
 }
 static bool report_memory_error(Lexer *lexer) {
@@ -57,6 +59,8 @@ static bool report_memory_error(Lexer *lexer) {
     error.message = "Nao foi possivel reservar memoria para os tokens.";
     error.suggestion = "Feche outros programas ou tente uma entrada menor.";
     error.subject = NULL; error.subject_length = 0U;
+    error.replacement=NULL;error.replacement_length=0U;
+    error.left_type=NULL;error.right_type=NULL;
     (void)error_list_add(lexer->errors, error);
     return false;
 }

@@ -130,6 +130,6 @@ static void test_terminal_colors(void) {
 
 int main(void) {
     test_read_prompt(); test_random_module(); test_terminal_module(); test_terminal_colors();
-    if (failures == 0) { puts("Todos os testes da Lume v0.2.1 passaram."); return 0; }
+    if (failures == 0) { puts("Todos os testes de compatibilidade da Lume v0.2.x passaram."); return 0; }
     fprintf(stderr, "%d teste(s) falharam.\n", failures); return 1;
 }

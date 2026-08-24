@@ -23,5 +23,11 @@ bool interpreter_execute_program_with_trace(const Program *program, Environment 
 bool interpreter_execute_program_with_modules(const Program *program,Environment *environment,
     RuntimeIO *io,RuntimeTrace *trace,ModuleRegistry *registry,LumeModule *module,
     ErrorList *errors);
+/* Variante usada por sessoes persistentes. 'published_user_callable' informa
+   se algum Callable passou a emprestar a AST deste Program. */
+bool interpreter_execute_program_with_modules_tracking(const Program *program,
+    Environment *environment,RuntimeIO *io,RuntimeTrace *trace,
+    ModuleRegistry *registry,LumeModule *module,const Source *tracked_source,
+    bool *published_user_callable,ErrorList *errors);
 
 #endif
