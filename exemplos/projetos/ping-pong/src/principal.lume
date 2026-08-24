@@ -1,0 +1,128 @@
+// Ping-Pong em Lume: W/S controla o jogador, Q encerra.
+importe "lume/aleatorio" como aleatorio
+importe "lume/matematica" como mat
+importe "lume/terminal" como terminal
+importe "lume/tempo" como tempo
+
+constante CELULA_VAZIA = terminal.estilize("  ", "padrao", "preto")
+constante CELULA_BRANCA = terminal.estilize("  ", "padrao", "branco_claro")
+
+funcao limitar(valor, minimo, maximo) {
+    se valor < minimo { retorne minimo }
+    se valor > maximo { retorne maximo }
+    retorne valor
+}
+
+funcao nova_bola(largura, altura, direcao) {
+    variavel y = aleatorio.inteiro(4, altura - 5)
+    variavel inclinacao = aleatorio.inteiro(-2, 2)
+    se inclinacao == 0 { inclinacao = 1 }
+    retorne [decimal(largura) / 2.0, decimal(y), decimal(direcao), decimal(inclinacao) * 0.35]
+}
+
+funcao desenhar(largura, altura, jogador_y, cpu_y, bola_x, bola_y, pontos) {
+    variavel bx = inteiro(mat.piso(bola_x))
+    variavel by = inteiro(mat.piso(bola_y))
+    variavel quadro = ""
+
+    para y de 0 ate altura - 1 {
+        variavel linha = ""
+        para x de 0 ate largura - 1 {
+            variavel pixel = CELULA_VAZIA
+            se y == 0 ou y == altura - 1 ou x == 0 ou x == largura - 1 {
+                pixel = CELULA_BRANCA
+            }
+            se x == 2 e y >= jogador_y e y < jogador_y + 4 {
+                pixel = CELULA_BRANCA
+            }
+            se x == largura - 3 e y >= cpu_y e y < cpu_y + 4 {
+                pixel = CELULA_BRANCA
+            }
+            se x == bx e y == by {
+                pixel = CELULA_BRANCA
+            }
+            linha = linha + pixel
+        }
+        quadro = quadro + linha + "\n"
+    }
+
+    variavel status = " PING-PONG | W/S | Q sai | " + texto(pontos[0]) + " x " + texto(pontos[1])
+    quadro = quadro + terminal.estilize(status, "branco_claro", "preto")
+    terminal.posicione(1, 1)
+    escreva(quadro)
+}
+
+funcao principal() {
+    // 32 celulas de dois caracteres: o mesmo formato visual da Cobrinha.
+    variavel largura = 32
+    variavel altura = 18
+    variavel tamanho_terminal = terminal.tamanho()
+
+    // Uma coluna extra evita quebra automática após a borda direita.
+    se tamanho_terminal[0] < largura * 2 + 1 ou tamanho_terminal[1] < altura + 2 {
+        escreva("Terminal pequeno demais para o Ping-Pong.")
+        escreva("Use pelo menos " + texto(largura * 2 + 1) + " colunas por " + texto(altura + 2) + " linhas.")
+        retorne
+    }
+
+    variavel jogador_y = inteiro(altura / 2) - 2
+    variavel cpu_y = jogador_y
+    variavel pontos = [0, 0]
+    variavel bola = nova_bola(largura, altura, 1)
+    variavel executando = verdadeiro
+
+    terminal.limpe()
+    terminal.oculte_cursor()
+
+    enquanto executando {
+        variavel tecla = terminal.tecla()
+        se tecla == "q" { executando = falso }
+        se tecla == "w" { jogador_y = jogador_y - 1 }
+        se tecla == "s" { jogador_y = jogador_y + 1 }
+        jogador_y = limitar(jogador_y, 1, altura - 5)
+
+        // A CPU acompanha a bola com velocidade limitada.
+        variavel centro_cpu = cpu_y + 2
+        se bola[1] < centro_cpu { cpu_y = cpu_y - 1 }
+        se bola[1] > centro_cpu { cpu_y = cpu_y + 1 }
+        cpu_y = limitar(cpu_y, 1, altura - 5)
+
+        variavel proximo_x = bola[0] + bola[2]
+        variavel proximo_y = bola[1] + bola[3]
+
+        se proximo_y <= 1.0 ou proximo_y >= decimal(altura - 2) {
+            bola[3] = 0.0 - bola[3]
+            proximo_y = bola[1] + bola[3]
+        }
+
+        se bola[2] < 0.0 e proximo_x <= 3.0 e proximo_x >= 2.0 e proximo_y >= decimal(jogador_y) e proximo_y < decimal(jogador_y + 4) {
+            bola[2] = 0.0 - bola[2]
+            proximo_x = 3.0
+        }
+        se bola[2] > 0.0 e proximo_x >= decimal(largura - 4) e proximo_x <= decimal(largura - 3) e proximo_y >= decimal(cpu_y) e proximo_y < decimal(cpu_y + 4) {
+            bola[2] = 0.0 - bola[2]
+            proximo_x = decimal(largura - 4)
+        }
+
+        bola[0] = proximo_x
+        bola[1] = proximo_y
+
+        se bola[0] < 1.0 {
+            pontos[1] = pontos[1] + 1
+            bola = nova_bola(largura, altura, 1)
+        }
+        se bola[0] > decimal(largura - 2) {
+            pontos[0] = pontos[0] + 1
+            bola = nova_bola(largura, altura, -1)
+        }
+
+        desenhar(largura, altura, jogador_y, cpu_y, bola[0], bola[1], pontos)
+        tempo.durma(100)
+    }
+
+    terminal.resetar_cor()
+    terminal.mostre_cursor()
+    escreva("Fim de jogo: " + texto(pontos[0]) + " x " + texto(pontos[1]))
+}
+
+principal()

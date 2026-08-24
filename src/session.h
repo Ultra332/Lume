@@ -14,6 +14,9 @@ typedef struct {
 void session_init(LumeSession *session, RuntimeIO io);
 void session_free(LumeSession *session);
 InputStatus session_classify(const char *text, size_t length);
+/* Em sucesso, error_source e NULL. Em falha, um valor nao NULL pertence ao
+   chamador; NULL indica que o Source apontado pelo diagnostico foi retido pela
+   sessao e permanece valido somente ate session_free. */
 bool session_execute(LumeSession *session, const char *name, const char *text, size_t length,
                      bool print_expression, Source **error_source, ErrorList *errors);
 bool session_execute_repl(LumeSession *session, const char *name, const char *text, size_t length,

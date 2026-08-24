@@ -1,0 +1,104 @@
+// Gerador BSP didatico para o mini raycaster.
+// Cada no usa: [x, y, largura, altura, esquerda, direita, sala].
+importe "lume/aleatorio" como aleatorio
+importe "lume/matematica" como mat
+
+funcao criar_grade(largura, altura) {
+    variavel grade = []
+    para y de 0 ate altura - 1 {
+        variavel linha = []
+        para x de 0 ate largura - 1 {
+            adicione(linha, 1)
+        }
+        adicione(grade, linha)
+    }
+    retorne grade
+}
+
+funcao abrir_celula(grade, x, y) {
+    grade[y][x] = 0
+}
+
+funcao criar_sala(grade, x, y, largura, altura) {
+    variavel margem_esquerda = aleatorio.inteiro(1, 2)
+    variavel margem_topo = aleatorio.inteiro(1, 2)
+    variavel margem_direita = aleatorio.inteiro(1, 2)
+    variavel margem_base = aleatorio.inteiro(1, 2)
+    variavel inicio_x = x + margem_esquerda
+    variavel inicio_y = y + margem_topo
+    variavel fim_x = x + largura - margem_direita - 1
+    variavel fim_y = y + altura - margem_base - 1
+
+    se fim_x < inicio_x { fim_x = inicio_x }
+    se fim_y < inicio_y { fim_y = inicio_y }
+
+    para sala_y de inicio_y ate fim_y {
+        para sala_x de inicio_x ate fim_x {
+            abrir_celula(grade, sala_x, sala_y)
+        }
+    }
+
+    variavel centro_x = inteiro(mat.piso((inicio_x + fim_x) / 2))
+    variavel centro_y = inteiro(mat.piso((inicio_y + fim_y) / 2))
+    retorne [centro_x, centro_y, inicio_x, inicio_y, fim_x, fim_y]
+}
+
+funcao corredor(grade, origem, destino) {
+    variavel x = origem[0]
+    variavel y = origem[1]
+    abrir_celula(grade, x, y)
+
+    enquanto x != destino[0] {
+        se x < destino[0] { x = x + 1 } senao { x = x - 1 }
+        abrir_celula(grade, x, y)
+    }
+    enquanto y != destino[1] {
+        se y < destino[1] { y = y + 1 } senao { y = y - 1 }
+        abrir_celula(grade, x, y)
+    }
+}
+
+funcao dividir(grade, x, y, largura, altura, profundidade) {
+    variavel no = [x, y, largura, altura, nulo, nulo, nulo]
+    variavel pode_vertical = largura >= 14
+    variavel pode_horizontal = altura >= 12
+
+    se profundidade <= 0 ou (pode_vertical == falso e pode_horizontal == falso) {
+        variavel sala = criar_sala(grade, x, y, largura, altura)
+        no[6] = sala
+        retorne [no, [sala[0], sala[1]]]
+    }
+
+    variavel vertical = pode_vertical
+    se pode_vertical e pode_horizontal {
+        se altura > largura { vertical = falso }
+        se altura == largura { vertical = aleatorio.inteiro(0, 1) == 1 }
+    }
+
+    variavel esquerda = nulo
+    variavel direita = nulo
+    se vertical {
+        variavel corte = aleatorio.inteiro(6, largura - 6)
+        esquerda = dividir(grade, x, y, corte, altura, profundidade - 1)
+        direita = dividir(grade, x + corte, y, largura - corte, altura, profundidade - 1)
+    } senao {
+        variavel corte = aleatorio.inteiro(5, altura - 5)
+        esquerda = dividir(grade, x, y, largura, corte, profundidade - 1)
+        direita = dividir(grade, x, y + corte, largura, altura - corte, profundidade - 1)
+    }
+
+    no[4] = esquerda[0]
+    no[5] = direita[0]
+    corredor(grade, esquerda[1], direita[1])
+    retorne [no, esquerda[1]]
+}
+
+exporte funcao gerar(largura, altura, profundidade) {
+    se largura < 17 ou altura < 13 {
+        retorne nulo
+    }
+    variavel grade = criar_grade(largura, altura)
+    variavel resultado = dividir(grade, 1, 1, largura - 2, altura - 2, profundidade)
+    variavel inicio = resultado[1]
+    retorne [grade, decimal(inicio[0]) + 0.5, decimal(inicio[1]) + 0.5, resultado[0]]
+}

@@ -2,6 +2,74 @@
 
 Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.3.0] — 2026-08-24
+
+Versão focada em tornar a execução e os diagnósticos mais compreensíveis sem
+alterar a sintaxe ou a semântica dos programas da série 0.2.x.
+
+Esta versão também incorpora as mudanças que foram preparadas localmente após
+a v0.2.1 e que não chegaram a ser publicadas como uma versão separada.
+
+### Linguagem e biblioteca
+
+- imports aceitam aliases contextuais com `importe "modulo" como nome`;
+- aliases permitem que módulos como `lume/texto` coexistam com nomes locais e
+  funções como `texto()` sem colisão;
+- `lume/matematica` passa a oferecer `seno`, `cosseno`, `tangente`, `graus` e
+  `radianos`;
+- imports sem alias mantêm o comportamento anterior, `como` continua válido
+  como identificador fora dessa construção e o cache permanece indexado pelo
+  caminho normalizado do módulo.
+
+### Exemplos e terminal
+
+- adicionados exemplos didáticos de aliases e trigonometria;
+- adicionados os projetos ping-pong e Doom/raycaster com BSP em Lume;
+- os projetos interativos preservam o frame fixo, as cores, a restauração do
+  cursor e a limpeza de estado introduzidos na série v0.2.x.
+
+### Educação
+
+- `--explicar` passa a relacionar declarações, atribuições, leituras de nomes,
+  expressões unárias e binárias, condições, laços, listas, chamadas, parâmetros
+  e retornos aos valores realmente observados pelo interpretador;
+- `--passo` mostra fonte e linha do acontecimento e preserva os comandos `Enter`,
+  `v`, `p`, `c` e `q` para avanço, variáveis, pilha lógica, continuação e saída;
+- os eventos de expressão carregam a AST correspondente, operandos, resultado e
+  informação de curto-circuito, mantendo a ordem real de avaliação;
+- textos e listas extensos recebem representação visual limitada e aninhamento
+  controlado, sem modificar os valores da linguagem;
+- explicações longas usam streaming: até 160 eventos são detalhados, encerramentos
+  estruturais recebem uma pequena janela adicional e os eventos intermediários
+  omitidos são contabilizados no resumo;
+- a mesma execução alimenta os modos normal, explicado e passo a passo; não foi
+  criado um segundo interpretador educacional.
+
+### Analyzer
+
+- código posterior a `pare` ou `continue` no mesmo fluxo direto passa a ser
+  identificado como inalcançável;
+- sugestões de nomes ficam mais conservadoras, rejeitando nomes curtos e empates;
+- símbolos exportados contam como usados, evitando avisos óbvios em módulos.
+
+### Diagnósticos
+
+- erros de nome em runtime podem mostrar uma substituição próxima e inequívoca;
+- erros de operações incompatíveis passam a informar os tipos recebidos à
+  esquerda e à direita quando essa informação é segura;
+- os diagnósticos normais continuam sendo o ponto único para explicar erros; não
+  foi adicionada uma flag `--explicar-erros`.
+
+### Estabilidade
+
+- eventos educacionais são consumidos sincronicamente e seus ponteiros são
+  empréstimos válidos apenas durante o callback, sem histórico crescente;
+- a instrumentação nova de expressões permanece inativa na execução normal;
+- unidades do REPL que já publicaram funções continuam retendo AST e Source mesmo
+  se uma instrução posterior da mesma entrada falhar;
+- a 18ª suíte, `test_v030`, cobre eventos estruturados, representação limitada,
+  diagnósticos, analyzer, módulos e uma explicação com um milhão de iterações.
+
 ## [0.2.1] — 2026-08-20
 
 Atualização visual e de usabilidade para programas interativos no terminal.

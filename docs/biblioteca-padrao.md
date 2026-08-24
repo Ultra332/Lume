@@ -1,4 +1,4 @@
-# Biblioteca padrão da Lume 0.2
+# Biblioteca padrão da Lume 0.3
 
 Os módulos oficiais usam o namespace reservado `lume/*`. São módulos nativos
 da versão instalada, não dependências, e não aparecem em `lume.lock`.
@@ -12,14 +12,26 @@ da versão instalada, não dependências, e não aparecem em `lume.lock`.
 - `raiz(numero)`: retorna decimal; valores negativos são erro numérico.
 - `piso(numero)`, `teto(numero)`: retornam decimal.
 - `arredonde(numero)`: retorna decimal, arredondando metades para longe de zero.
+- `seno(radianos)`, `cosseno(radianos)` e `tangente(radianos)`: funções
+  trigonométricas; os ângulos são sempre informados em radianos.
+- `radianos(graus)`: converte graus para radianos.
+- `graus(radianos)`: converte radianos para graus.
 - `PI` e `E`: constantes decimais imutáveis.
 
 ```lume
 importe "lume/matematica"
 escreva(matematica.raiz(81)) // 9
+escreva(matematica.seno(matematica.PI / 2)) // aproximadamente 1
 ```
 
 Todas exigem números e produzem erro de tipo para outros valores.
+
+Um alias pode deixar fórmulas menores:
+
+```lume
+importe "lume/matematica" como mat
+escreva(mat.graus(mat.PI)) // aproximadamente 180
+```
 
 ## `lume/texto`
 

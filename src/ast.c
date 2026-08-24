@@ -257,7 +257,27 @@ Stmt *stmt_new_return(Expr *value, SourceSpan span) {
     return statement;
 }
 Stmt *stmt_new_index_assignment(Expr *target,Expr *index,Expr *value,SourceSpan span){Stmt *s=stmt_allocate(STMT_INDEX_ASSIGNMENT,span);if(s!=NULL){s->as.index_assignment.target=target;s->as.index_assignment.index=index;s->as.index_assignment.value=value;}return s;}
-Stmt *stmt_new_import(const char *path,size_t path_length,SourceSpan path_span,SourceSpan span){Stmt *s=stmt_allocate(STMT_IMPORT,span);size_t start=0U,i;char *binding,*copy;if(s==NULL)return NULL;copy=memory_copy_string(path,path_length);if(copy==NULL){memory_free(s);return NULL;}for(i=0U;i<path_length;i++)if(path[i]=='/'||path[i]=='\\')start=i+1U;{size_t length=path_length-start;if(length>=5U&&memcmp(path+path_length-5U,".lume",5U)==0)length-=5U;binding=memory_copy_string(path+start,length);if(binding==NULL){memory_free(copy);memory_free(s);return NULL;}s->as.import.path=copy;s->as.import.path_length=path_length;s->as.import.binding=binding;s->as.import.binding_length=length;s->as.import.path_span=path_span;}return s;}
+Stmt *stmt_new_import(const char *path,size_t path_length,SourceSpan path_span,
+                      const char *alias,size_t alias_length,SourceSpan alias_span,
+                      SourceSpan span){
+    Stmt *s=stmt_allocate(STMT_IMPORT,span);size_t start=0U,i,length;char *binding,*copy;
+    if(s==NULL)return NULL;
+    copy=memory_copy_string(path,path_length);
+    if(copy==NULL){memory_free(s);return NULL;}
+    if(alias!=NULL){start=0U;length=alias_length;binding=memory_copy_string(alias,length);}
+    else{
+        for(i=0U;i<path_length;i++)if(path[i]=='/'||path[i]=='\\')start=i+1U;
+        length=path_length-start;
+        if(length>=5U&&memcmp(path+path_length-5U,".lume",5U)==0)length-=5U;
+        binding=memory_copy_string(path+start,length);
+    }
+    if(binding==NULL){memory_free(copy);memory_free(s);return NULL;}
+    s->as.import.path=copy;s->as.import.path_length=path_length;
+    s->as.import.binding=binding;s->as.import.binding_length=length;
+    s->as.import.path_span=path_span;s->as.import.binding_span=alias!=NULL?alias_span:path_span;
+    s->as.import.has_alias=alias!=NULL;
+    return s;
+}
 void stmt_free(Stmt *statement) {
     if (statement == NULL) return;
     switch (statement->type) {

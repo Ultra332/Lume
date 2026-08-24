@@ -14,7 +14,7 @@ lume --versao
 Resultado esperado:
 
 ```text
-Lume 0.2.1
+Lume 0.3.0
 ```
 
 Use `lume --ajuda` sempre que quiser rever os comandos disponíveis.
@@ -113,17 +113,35 @@ especial de teste ou `assert` nesta versão. Subdiretórios não são percorrido
 
 ## 6. Entender o programa
 
-```powershell
-lume --analisar ola.lume
-lume --explicar ola.lume
-lume --passo ola.lume
+Considere um arquivo `calculo.lume`:
+
+```lume
+variavel resultado = 10 + 5 * 2
+escreva(resultado)
 ```
 
-- `--analisar` examina sem executar;
-- `--explicar` executa e descreve acontecimentos;
-- `--passo` pausa entre etapas.
+```powershell
+lume --explicar calculo.lume
+lume --passo calculo.lume
+lume --analisar calculo.lume
+```
 
-Avisos educacionais não impedem a execução normal.
+- `--explicar` executa automaticamente e mostra, na ordem real, acontecimentos
+  como `5 * 2 = 10`, `10 + 10 = 20` e a criação de `resultado` com valor `20`;
+- `--passo` acompanha a mesma execução gradualmente. `Enter` avança, `v` mostra
+  variáveis, `p` mostra a pilha lógica, `c` continua sem pausas e `q` encerra;
+- `--analisar` percorre o programa sem executá-lo. Nem mesmo uma chamada a
+  `escreva` produz sua saída durante a análise.
+
+`--explicar` e `--passo` preservam os efeitos normais do programa, pois usam o
+mesmo interpretador. Para execuções longas, a continuação automática resume
+eventos intermediários sem interromper o cálculo. Textos e listas extensos
+também são abreviados somente na apresentação.
+
+Avisos educacionais não impedem a execução normal. Erros exibidos pelo comando
+normal já podem trazer tipos recebidos ou uma sugestão conservadora de nome; não
+existe um comando separado `--explicar-erros`. Consulte exemplos completos em
+[modos educacionais](modos-educacionais.md).
 
 ## 7. Trabalhar no VS Code
 

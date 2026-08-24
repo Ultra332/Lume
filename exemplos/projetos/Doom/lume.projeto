@@ -1,0 +1,4 @@
+nome = "miniraycaster"
+versao = "0.3.0"
+entrada = "principal.lume"
+fonte = "."

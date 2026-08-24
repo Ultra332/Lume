@@ -32,7 +32,7 @@ static void test_basics(void) {
     static const TokenType strings[] = {TOKEN_STRING, TOKEN_STRING, TOKEN_STRING, TOKEN_EOF};
     static const TokenType keyword[] = {TOKEN_KW_VARIAVEL, TOKEN_EOF};
     expect_types("", empty, 1U);
-    expect_types("contador escreva leia", identifiers, 4U);
+    expect_types("contador escreva como", identifiers, 4U);
     expect_types("variavel", keyword, 2U);
     expect_types("0 42 999999 3.14", numbers, 5U);
     expect_types("\"Ola\" \"linha\\nnova\" \"\"", strings, 4U);

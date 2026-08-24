@@ -21,6 +21,8 @@ static bool report(ErrorList *errors, LumeErrorKind kind, SourceSpan span,
     error.kind = kind; error.span = span;
     error.message = message; error.suggestion = suggestion;
     error.subject = NULL; error.subject_length = 0U;
+    error.replacement=NULL;error.replacement_length=0U;
+    error.left_type=NULL;error.right_type=NULL;
     return error_list_add(errors, error);
 }
 static bool fail(ErrorList *errors, SourceSpan span, const char *message, const char *suggestion) {
@@ -30,6 +32,17 @@ static bool fail(ErrorList *errors, SourceSpan span, const char *message, const 
 static bool fail_type(ErrorList *errors, SourceSpan span, const char *message, const char *suggestion) {
     (void)report(errors, LUME_ERROR_TYPE, span, message, suggestion);
     return false;
+}
+static bool fail_type_values(ErrorList *errors,SourceSpan span,const char *message,
+                             const char *suggestion,const Value *left,
+                             const Value *right) {
+    LumeError error;
+    error.kind=LUME_ERROR_TYPE;error.span=span;error.message=message;
+    error.suggestion=suggestion;error.subject=NULL;error.subject_length=0U;
+    error.replacement=NULL;error.replacement_length=0U;
+    error.left_type=left==NULL?NULL:value_type_name(left->type);
+    error.right_type=right==NULL?NULL:value_type_name(right->type);
+    (void)error_list_add(errors,error);return false;
 }
 static bool fail_numeric(ErrorList *errors, SourceSpan span, const char *message, const char *suggestion) {
     (void)report(errors, LUME_ERROR_NUMERIC, span, message, suggestion);
@@ -109,9 +122,9 @@ static bool values_equal(const Value *left, const Value *right) {
     return false;
 }
 
-typedef struct { RuntimeIO *io; RuntimeTrace *trace; size_t call_depth; SourceSpan outer_call_span; ModuleRegistry *registry; LumeModule *module; } Runtime;
+typedef struct { RuntimeIO *io; RuntimeTrace *trace; size_t call_depth; SourceSpan outer_call_span; ModuleRegistry *registry; LumeModule *module; const Source *tracked_source; bool *published_user_callable; } Runtime;
 typedef enum { EXEC_OK, EXEC_ERROR, EXEC_RETURN, EXEC_BREAK, EXEC_CONTINUE } ExecStatus;
-typedef struct { ExecStatus status; Value value; } ExecutionResult;
+typedef struct { ExecStatus status; Value value; const Stmt *origin; } ExecutionResult;
 static ExecutionResult execute_statements(const StmtArray *, Environment *, Runtime *, ErrorList *);
 static void emit(Runtime *runtime, TraceEvent event) {
     if (runtime->trace != NULL && !runtime->trace->stop_requested &&
@@ -126,6 +139,26 @@ static TraceEvent trace_event(TraceEventType type, SourceSpan span,
     memset(&event, 0, sizeof(event)); event.type = type; event.span = span;
     event.environment = environment; return event;
 }
+static void emit_unary_expression(Runtime *runtime, const Expr *expression,
+                                  const Environment *environment,
+                                  const Value *operand, const Value *result) {
+    TraceEvent event;
+    if (runtime->trace == NULL) return;
+    event = trace_event(TRACE_UNARY_EXPRESSION, expression->span, environment);
+    event.expression = expression; event.left = operand; event.after = result;
+    emit(runtime, event);
+}
+static void emit_binary_expression(Runtime *runtime, const Expr *expression,
+                                   const Environment *environment,
+                                   const Value *left, const Value *right,
+                                   const Value *result, bool short_circuit) {
+    TraceEvent event;
+    if (runtime->trace == NULL) return;
+    event = trace_event(TRACE_BINARY_EXPRESSION, expression->span, environment);
+    event.expression = expression; event.left = left; event.right = right;
+    event.after = result; event.short_circuit = short_circuit;
+    emit(runtime, event);
+}
 static bool evaluate(const Expr *expression, Environment *environment, Runtime *runtime, Value *out, ErrorList *errors);
 static bool evaluate_unary(const Expr *expression, Environment *environment, Runtime *runtime, Value *out, ErrorList *errors) {
     Value operand = value_null();
@@ -133,18 +166,28 @@ static bool evaluate_unary(const Expr *expression, Environment *environment, Run
     if (!evaluate(expression->as.unary.operand, environment, runtime, &operand, errors)) return false;
     if (operator_type == UNARY_NOT) {
         if (operand.type != VALUE_BOOLEAN) {
+            bool failed=fail_type_values(errors, expression->as.unary.operator_span,
+                "O operador 'nao' exige um valor booleano.", "Use verdadeiro ou falso.",
+                &operand,NULL);
             value_free(&operand);
-            return fail_type(errors, expression->as.unary.operator_span,
-                "O operador 'nao' exige um valor booleano.", "Use verdadeiro ou falso.");
+            return failed;
         }
-        *out = value_boolean(!operand.as.boolean); value_free(&operand); return true;
+        *out = value_boolean(!operand.as.boolean);
+        if(runtime->trace!=NULL)emit_unary_expression(runtime, expression, environment, &operand, out);
+        value_free(&operand); return true;
     }
     if (!is_number(&operand)) {
+        bool failed=fail_type_values(errors, expression->as.unary.operator_span,
+            "Os operadores unarios '+' e '-' exigem um numero.",
+            "Remova o operador ou use um valor numerico.",&operand,NULL);
         value_free(&operand);
-        return fail_type(errors, expression->as.unary.operator_span,
-            "Os operadores unarios '+' e '-' exigem um numero.", "Remova o operador ou use um valor numerico.");
+        return failed;
     }
-    if (operator_type == UNARY_POSITIVE) { *out = operand; return true; }
+    if (operator_type == UNARY_POSITIVE) {
+        *out = operand;
+        if(runtime->trace!=NULL)emit_unary_expression(runtime, expression, environment, &operand, out);
+        return true;
+    }
     if (operand.type == VALUE_INTEGER) {
         if (operand.as.integer == INT64_MIN) {
             value_free(&operand);
@@ -157,6 +200,7 @@ static bool evaluate_unary(const Expr *expression, Environment *environment, Run
             value_free(&operand); return false;
         }
     }
+    if(runtime->trace!=NULL)emit_unary_expression(runtime, expression, environment, &operand, out);
     value_free(&operand); return true;
 }
 static bool evaluate_numeric_binary(BinaryOperator operator_type, const Value *left, const Value *right,
@@ -168,7 +212,8 @@ static bool evaluate_numeric_binary(BinaryOperator operator_type, const Value *l
     }
     if (operator_type == BINARY_REMAINDER) {
         if (left->type != VALUE_INTEGER || right->type != VALUE_INTEGER)
-            return fail_type(errors, span, "O operador '%' aceita apenas inteiros.", "Use dois valores inteiros.");
+            return fail_type_values(errors, span, "O operador '%' aceita apenas inteiros.",
+                "Use dois valores inteiros.",left,right);
         if (right->as.integer == 0)
             return fail_numeric(errors, span, "Nao e possivel calcular resto por zero.", "Use um divisor diferente de zero.");
         if (left->as.integer == INT64_MIN && right->as.integer == -1) {
@@ -204,57 +249,72 @@ static bool evaluate_binary(const Expr *expression, Environment *environment, Ru
     if (!evaluate(expression->as.binary.left, environment, runtime, &left, errors)) return false;
     if (operator_type == BINARY_LOGICAL_AND || operator_type == BINARY_LOGICAL_OR) {
         if (left.type != VALUE_BOOLEAN) {
+            bool failed=fail_type_values(errors, expression->as.binary.operator_span,
+                "Os operadores 'e' e 'ou' exigem booleanos.",
+                "Use verdadeiro ou falso nos dois lados.",&left,NULL);
             value_free(&left);
-            return fail_type(errors, expression->as.binary.operator_span,
-                "Os operadores 'e' e 'ou' exigem booleanos.", "Use verdadeiro ou falso nos dois lados.");
+            return failed;
         }
         if ((operator_type == BINARY_LOGICAL_AND && !left.as.boolean) ||
             (operator_type == BINARY_LOGICAL_OR && left.as.boolean)) {
-            *out = value_boolean(left.as.boolean); value_free(&left); return true;
+            *out = value_boolean(left.as.boolean);
+            if(runtime->trace!=NULL)emit_binary_expression(runtime, expression, environment, &left, NULL, out, true);
+            value_free(&left); return true;
         }
     }
     if (!evaluate(expression->as.binary.right, environment, runtime, &right, errors)) { value_free(&left); return false; }
     if (operator_type == BINARY_LOGICAL_AND || operator_type == BINARY_LOGICAL_OR) {
         if (right.type != VALUE_BOOLEAN) {
+            bool failed=fail_type_values(errors, expression->as.binary.operator_span,
+                "Os operadores 'e' e 'ou' exigem booleanos.",
+                "Use verdadeiro ou falso nos dois lados.",&left,&right);
             value_free(&left); value_free(&right);
-            return fail_type(errors, expression->as.binary.operator_span,
-                "Os operadores 'e' e 'ou' exigem booleanos.", "Use verdadeiro ou falso nos dois lados.");
+            return failed;
         }
         *out = value_boolean(operator_type == BINARY_LOGICAL_AND ?
             left.as.boolean && right.as.boolean : left.as.boolean || right.as.boolean);
+        if(runtime->trace!=NULL)emit_binary_expression(runtime, expression, environment, &left, &right, out, false);
         value_free(&left); value_free(&right); return true;
     }
     if (operator_type == BINARY_EQUAL || operator_type == BINARY_NOT_EQUAL) {
         bool equal = values_equal(&left, &right);
         *out = value_boolean(operator_type == BINARY_EQUAL ? equal : !equal);
+        if(runtime->trace!=NULL)emit_binary_expression(runtime, expression, environment, &left, &right, out, false);
         value_free(&left); value_free(&right); return true;
     }
     if (operator_type == BINARY_LESS || operator_type == BINARY_LESS_EQUAL ||
         operator_type == BINARY_GREATER || operator_type == BINARY_GREATER_EQUAL) {
         double left_number, right_number;
         if (!is_number(&left) || !is_number(&right)) {
+            bool failed=fail_type_values(errors, expression->as.binary.operator_span,
+                "Comparacoes de ordem exigem dois numeros.",
+                "Use inteiros ou decimais nos dois lados.",&left,&right);
             value_free(&left); value_free(&right);
-            return fail_type(errors, expression->as.binary.operator_span,
-                "Comparacoes de ordem exigem dois numeros.", "Use inteiros ou decimais nos dois lados.");
+            return failed;
         }
         left_number = as_decimal(&left); right_number = as_decimal(&right);
         if (operator_type == BINARY_LESS) ok = left_number < right_number;
         else if (operator_type == BINARY_LESS_EQUAL) ok = left_number <= right_number;
         else if (operator_type == BINARY_GREATER) ok = left_number > right_number;
         else ok = left_number >= right_number;
-        *out = value_boolean(ok); value_free(&left); value_free(&right); return true;
+        *out = value_boolean(ok);
+        if(runtime->trace!=NULL)emit_binary_expression(runtime, expression, environment, &left, &right, out, false);
+        value_free(&left); value_free(&right); return true;
     }
     if (operator_type == BINARY_ADD && left.type == VALUE_STRING && right.type == VALUE_STRING) {
         ok = concatenate(&left, &right, out, errors, expression->span);
+        if (ok && runtime->trace!=NULL) emit_binary_expression(runtime, expression, environment, &left, &right, out, false);
         value_free(&left); value_free(&right); return ok;
     }
     if (!is_number(&left) || !is_number(&right)) {
-        value_free(&left); value_free(&right);
-        return fail_type(errors, expression->as.binary.operator_span,
+        bool failed=fail_type_values(errors, expression->as.binary.operator_span,
             "Este operador aritmetico exige dois numeros do mesmo dominio compativel.",
-            "Use dois numeros; apenas '+' tambem aceita dois textos.");
+            "Use dois numeros; apenas '+' tambem aceita dois textos.",&left,&right);
+        value_free(&left); value_free(&right);
+        return failed;
     }
     ok = evaluate_numeric_binary(operator_type, &left, &right, out, errors, expression->span);
+    if (ok && runtime->trace!=NULL) emit_binary_expression(runtime, expression, environment, &left, &right, out, false);
     value_free(&left); value_free(&right); return ok;
 }
 static bool call_callable(Callable *callable, Value *arguments, size_t count,
@@ -269,11 +329,13 @@ static bool call_callable(Callable *callable, Value *arguments, size_t count,
         TraceEvent event = trace_event(TRACE_NATIVE_CALL, span, environment);
         event.name = callable->name; event.name_length = strlen(callable->name);
         event.arguments = arguments; event.argument_count = count; emit(runtime, event);
+        if (runtime->trace != NULL && runtime->trace->stop_requested) return false;
     }
     if(callable->type==CALLABLE_NATIVE_CUSTOM)return callable->native_function(arguments,count,runtime->io,callable->native_context,out,span,errors);
     if (callable->type == CALLABLE_NATIVE_WRITE) {
         TraceEvent event = trace_event(TRACE_OUTPUT, span, environment);
         event.name = "escreva"; event.name_length = 7U; event.after = &arguments[0]; emit(runtime, event);
+        if (runtime->trace != NULL && runtime->trace->stop_requested) return false;
         value_print(runtime->io->output, &arguments[0]);
         fputc('\n', runtime->io->output); *out = value_null(); return true;
     }
@@ -382,7 +444,9 @@ decimal_error:
         ExecutionResult result;
         TraceEvent call_event = trace_event(TRACE_FUNCTION_CALL, span, environment);
         call_event.name=callable->name;call_event.name_length=strlen(callable->name);
-        call_event.arguments=arguments;call_event.argument_count=count;emit(runtime,call_event);
+        call_event.arguments=arguments;call_event.argument_count=count;
+        call_event.statement=declaration;emit(runtime,call_event);
+        if(runtime->trace!=NULL&&runtime->trace->stop_requested)return false;
         if (call_environment == NULL)
             return fail(errors, span, "Nao foi possivel criar o ambiente da chamada.", "Tente um programa menor.");
         for (index = 0U; index < count; index++) {
@@ -402,12 +466,13 @@ decimal_error:
         }
         if (runtime->call_depth == 0U) runtime->outer_call_span = span;
         runtime->call_depth++;
-        { TraceEvent enter_event=trace_event(TRACE_FUNCTION_ENTER,span,call_environment);enter_event.name=callable->name;enter_event.name_length=strlen(callable->name);emit(runtime,enter_event); }
+        { TraceEvent enter_event=trace_event(TRACE_FUNCTION_ENTER,span,call_environment);enter_event.name=callable->name;enter_event.name_length=strlen(callable->name);enter_event.arguments=arguments;enter_event.argument_count=count;enter_event.statement=declaration;emit(runtime,enter_event); }
+        if(runtime->trace!=NULL&&runtime->trace->stop_requested){runtime->call_depth--;environment_release_child(call_environment);return false;}
         result = execute_statements(&declaration->as.function.body->as.block.statements,
             call_environment, runtime, errors);
         if (result.status == EXEC_ERROR) { runtime->call_depth--; environment_release_child(call_environment); return false; }
-        if (result.status == EXEC_RETURN) { TraceEvent return_event=trace_event(TRACE_FUNCTION_RETURN,span,call_environment);return_event.name=callable->name;return_event.name_length=strlen(callable->name);return_event.after=&result.value;emit(runtime,return_event);runtime->call_depth--;*out=result.value;environment_release_child(call_environment);return true; }
-        *out=value_null();{TraceEvent return_event=trace_event(TRACE_FUNCTION_RETURN,span,call_environment);return_event.name=callable->name;return_event.name_length=strlen(callable->name);return_event.after=out;emit(runtime,return_event);}runtime->call_depth--;environment_release_child(call_environment);return true;
+        if (result.status == EXEC_RETURN) { TraceEvent return_event=trace_event(TRACE_FUNCTION_RETURN,result.origin==NULL?span:result.origin->span,call_environment);return_event.name=callable->name;return_event.name_length=strlen(callable->name);return_event.after=&result.value;return_event.statement=result.origin;return_event.expression=result.origin==NULL?NULL:result.origin->as.return_statement.value;emit(runtime,return_event);runtime->call_depth--;*out=result.value;environment_release_child(call_environment);return true; }
+        *out=value_null();{TraceEvent return_event=trace_event(TRACE_FUNCTION_RETURN,span,call_environment);return_event.name=callable->name;return_event.name_length=strlen(callable->name);return_event.after=out;return_event.statement=declaration;emit(runtime,return_event);}runtime->call_depth--;environment_release_child(call_environment);return true;
     }
 }
 static bool evaluate_call(const Expr *expression, Environment *environment, Runtime *runtime,
@@ -443,9 +508,17 @@ static bool evaluate(const Expr *expression, Environment *environment, Runtime *
             if (!value_copy(&expression->as.literal, out))
                 return fail(errors, expression->span, "Nao foi possivel copiar o valor.", "Tente uma expressao menor.");
             return true;
-        case EXPR_IDENTIFIER:
-            return environment_get(environment, expression->as.identifier.name,
+        case EXPR_IDENTIFIER: {
+            bool found = environment_get(environment, expression->as.identifier.name,
                 expression->as.identifier.length, out, expression->span, errors);
+            if (found && runtime->trace != NULL) {
+                TraceEvent event = trace_event(TRACE_IDENTIFIER_READ, expression->span, environment);
+                event.name = expression->as.identifier.name;
+                event.name_length = expression->as.identifier.length;
+                event.after = out; event.expression = expression; emit(runtime, event);
+            }
+            return found;
+        }
         case EXPR_GROUPING: return evaluate(expression->as.grouping.expression, environment, runtime, out, errors);
         case EXPR_UNARY: return evaluate_unary(expression, environment, runtime, out, errors);
         case EXPR_BINARY: return evaluate_binary(expression, environment, runtime, out, errors);
@@ -454,7 +527,7 @@ static bool evaluate(const Expr *expression, Environment *environment, Runtime *
             LumeList *list=list_new(); size_t index;
             if(list==NULL)return fail(errors,expression->span,"Nao foi possivel criar a lista.","Tente uma lista menor.");
             for(index=0U;index<expression->as.list.count;index++){Value item=value_null();if(!evaluate(expression->as.list.elements[index],environment,runtime,&item,errors)){list_release(list);return false;}if(!list_append(list,&item)){value_free(&item);list_release(list);return fail(errors,expression->span,"Nao foi possivel adicionar um elemento a lista.","A lista nao pode conter um ciclo consigo mesma.");}value_free(&item);}
-            *out=value_list(list);{TraceEvent event=trace_event(TRACE_LIST_CREATE,expression->span,environment);event.after=out;emit(runtime,event);}return true;
+            *out=value_list(list);{TraceEvent event=trace_event(TRACE_LIST_CREATE,expression->span,environment);event.after=out;event.expression=expression;emit(runtime,event);}return true;
         }
         case EXPR_INDEX: {
             Value target=value_null(),index=value_null();bool ok;
@@ -463,7 +536,7 @@ static bool evaluate(const Expr *expression, Environment *environment, Runtime *
             if(target.type!=VALUE_LIST){value_free(&target);value_free(&index);return fail_kind(errors,LUME_ERROR_INDEX,expression->span,"Este valor nao pode ser indexado.","Valores indexaveis atualmente: lista.");}
             if(index.type!=VALUE_INTEGER){value_free(&target);value_free(&index);return fail_kind(errors,LUME_ERROR_INDEX,expression->as.index.index->span,"O indice de uma lista precisa ser inteiro.","Use um inteiro a partir de zero.");}
             if(index.as.integer<0||(uint64_t)index.as.integer>=(uint64_t)target.as.list->count){value_free(&target);value_free(&index);return fail_kind(errors,LUME_ERROR_INDEX,expression->as.index.index->span,"O indice nao existe nesta lista.","Indices comecam em zero e precisam ser menores que tamanho(lista).");}
-            ok=list_get(target.as.list,(size_t)index.as.integer,out);if(ok){TraceEvent event=trace_event(TRACE_INDEX_READ,expression->span,environment);event.index=index.as.integer;event.after=out;emit(runtime,event);}value_free(&target);value_free(&index);return ok;
+            ok=list_get(target.as.list,(size_t)index.as.integer,out);if(ok){TraceEvent event=trace_event(TRACE_INDEX_READ,expression->span,environment);event.index=index.as.integer;event.after=out;event.expression=expression;emit(runtime,event);}value_free(&target);value_free(&index);return ok;
         }
         case EXPR_MEMBER: {
             Value target=value_null();bool ok;
@@ -478,7 +551,7 @@ bool interpreter_evaluate_expression(const Expr *expression, Value *out, ErrorLi
     RuntimeIO io; Runtime runtime;
     if (expression == NULL || out == NULL || errors == NULL || errors->count != 0U) return false;
     *out = value_null();
-    runtime_io_default(&io); runtime.io = &io; runtime.trace = NULL; runtime.call_depth=0U;runtime.registry=NULL;runtime.module=NULL;
+    runtime_io_default(&io); runtime.io = &io; runtime.trace = NULL; runtime.call_depth=0U;runtime.registry=NULL;runtime.module=NULL;runtime.tracked_source=NULL;runtime.published_user_callable=NULL;
     return evaluate(expression, NULL, &runtime, out, errors);
 }
 bool interpreter_evaluate_expression_in_environment(const Expr *expression,
@@ -487,7 +560,7 @@ bool interpreter_evaluate_expression_in_environment(const Expr *expression,
     if (expression == NULL || environment == NULL || out == NULL || errors == NULL ||
         errors->count != 0U) return false;
     *out = value_null();
-    runtime_io_default(&io); runtime.io = &io; runtime.trace = NULL; runtime.call_depth=0U;runtime.registry=NULL;runtime.module=NULL;
+    runtime_io_default(&io); runtime.io = &io; runtime.trace = NULL; runtime.call_depth=0U;runtime.registry=NULL;runtime.module=NULL;runtime.tracked_source=NULL;runtime.published_user_callable=NULL;
     return evaluate(expression, environment, &runtime, out, errors);
 }
 bool interpreter_evaluate_expression_with_io(const Expr *expression, Environment *environment,
@@ -495,7 +568,7 @@ bool interpreter_evaluate_expression_with_io(const Expr *expression, Environment
     Runtime runtime;
     if (expression == NULL || environment == NULL || io == NULL || out == NULL ||
         errors == NULL || errors->count != 0U) return false;
-    runtime.io = io; runtime.trace = NULL; runtime.call_depth=0U;runtime.registry=NULL;runtime.module=NULL; *out = value_null();
+    runtime.io = io; runtime.trace = NULL; runtime.call_depth=0U;runtime.registry=NULL;runtime.module=NULL;runtime.tracked_source=NULL;runtime.published_user_callable=NULL; *out = value_null();
     return evaluate(expression, environment, &runtime, out, errors);
 }
 static bool evaluate_condition(const Expr *condition, Environment *environment,
@@ -509,7 +582,7 @@ static bool evaluate_condition(const Expr *condition, Environment *environment,
     return true;
 }
 static ExecutionResult execution(ExecStatus status) {
-    ExecutionResult result; result.status = status; result.value = value_null(); return result;
+    ExecutionResult result; result.status = status; result.value = value_null(); result.origin=NULL; return result;
 }
 static ExecutionResult execute_statement(const Stmt *statement, Environment *environment,
                                          Runtime *runtime, ErrorList *errors) {
@@ -527,31 +600,37 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
                     statement->as.declaration.name_span, errors)) return execution(EXEC_ERROR);
             if (!evaluate(statement->as.declaration.initializer, environment, runtime, &value, errors))
                 return execution(EXEC_ERROR);
+            if(runtime->trace!=NULL&&runtime->trace->stop_requested){value_free(&value);return execution(EXEC_ERROR);}
             ok = environment_define(environment, statement->as.declaration.name,
                 statement->as.declaration.name_length, &value,
                 statement->type == STMT_VARIABLE_DECLARATION,
                 statement->as.declaration.name_span, errors);
             value_free(&value);
-            if (ok) { Value current = value_null();
+            if (ok && runtime->trace != NULL) { Value current = value_null();
                 if (environment_get(environment, statement->as.declaration.name, statement->as.declaration.name_length, &current, statement->span, errors)) {
                     TraceEvent event=trace_event(statement->type==STMT_VARIABLE_DECLARATION?TRACE_DECLARE_VARIABLE:TRACE_DECLARE_CONSTANT,statement->span,environment);
-                    event.name=statement->as.declaration.name;event.name_length=statement->as.declaration.name_length;event.after=&current;emit(runtime,event);value_free(&current);
+                    event.name=statement->as.declaration.name;event.name_length=statement->as.declaration.name_length;event.after=&current;event.expression=statement->as.declaration.initializer;event.statement=statement;emit(runtime,event);value_free(&current);
                 }
             }
             return execution(ok ? EXEC_OK : EXEC_ERROR);
         case STMT_ASSIGNMENT:
             {
             Value before = value_null();
-            (void)environment_get(environment, statement->as.assignment.name, statement->as.assignment.name_length, &before, statement->span, errors);
-            if (errors->count > 0U) { value_free(&before); return execution(EXEC_ERROR); }
+            if (!environment_validate_assignment(environment,statement->as.assignment.name,
+                    statement->as.assignment.name_length,statement->as.assignment.name_span,
+                    errors)) return execution(EXEC_ERROR);
+            if (runtime->trace != NULL && !environment_get(environment,
+                    statement->as.assignment.name,statement->as.assignment.name_length,
+                    &before,statement->span,errors)) return execution(EXEC_ERROR);
             if (!evaluate(statement->as.assignment.value, environment, runtime, &value, errors))
                 { value_free(&before); return execution(EXEC_ERROR); }
+            if(runtime->trace!=NULL&&runtime->trace->stop_requested){value_free(&before);value_free(&value);return execution(EXEC_ERROR);}
             ok = environment_assign(environment, statement->as.assignment.name,
                 statement->as.assignment.name_length, &value,
                 statement->as.assignment.name_span, errors);
             value_free(&value);
-            if (ok) { Value after = value_null(); (void)environment_get(environment, statement->as.assignment.name, statement->as.assignment.name_length, &after, statement->span, errors);
-                TraceEvent event=trace_event(TRACE_ASSIGN,statement->span,environment);event.name=statement->as.assignment.name;event.name_length=statement->as.assignment.name_length;event.before=&before;event.after=&after;emit(runtime,event);value_free(&after); }
+            if (ok && runtime->trace != NULL) { Value after = value_null(); (void)environment_get(environment, statement->as.assignment.name, statement->as.assignment.name_length, &after, statement->span, errors);
+                TraceEvent event=trace_event(TRACE_ASSIGN,statement->span,environment);event.name=statement->as.assignment.name;event.name_length=statement->as.assignment.name_length;event.before=&before;event.after=&after;event.expression=statement->as.assignment.value;event.statement=statement;emit(runtime,event);value_free(&after); }
             value_free(&before);
             return execution(ok ? EXEC_OK : EXEC_ERROR);
             }
@@ -570,8 +649,9 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
             if (!evaluate_condition(statement->as.if_statement.condition, environment,
                     runtime, &value, errors, "A condicao de 'se' precisa ser booleana.")) return execution(EXEC_ERROR);
             ok = value.as.boolean;
-            { TraceEvent event=trace_event(TRACE_IF_CONDITION,statement->as.if_statement.condition->span,environment);event.name="se";event.name_length=2U;event.decision=ok;emit(runtime,event); }
+            { TraceEvent event=trace_event(TRACE_IF_CONDITION,statement->as.if_statement.condition->span,environment);event.name="se";event.name_length=2U;event.decision=ok;event.expression=statement->as.if_statement.condition;event.after=&value;event.statement=statement;emit(runtime,event); }
             value_free(&value);
+            if(runtime->trace!=NULL&&runtime->trace->stop_requested)return execution(EXEC_ERROR);
             if (ok) return execute_statement(statement->as.if_statement.then_branch, environment, runtime, errors);
             if (statement->as.if_statement.else_branch != NULL)
                 return execute_statement(statement->as.if_statement.else_branch, environment, runtime, errors);
@@ -582,13 +662,20 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
                 if (!evaluate_condition(statement->as.while_statement.condition, environment,
                         runtime, &value, errors, "A condicao de 'enquanto' precisa ser booleana.")) return execution(EXEC_ERROR);
                 ok = value.as.boolean;
-                {TraceEvent event=trace_event(TRACE_WHILE_CONDITION,statement->as.while_statement.condition->span,environment);event.name="enquanto";event.name_length=8U;event.decision=ok;event.iteration=iteration;emit(runtime,event);}
+                {TraceEvent event=trace_event(TRACE_WHILE_CONDITION,statement->as.while_statement.condition->span,environment);event.name="enquanto";event.name_length=8U;event.decision=ok;event.iteration=iteration;event.expression=statement->as.while_statement.condition;event.after=&value;event.statement=statement;emit(runtime,event);}
                 value_free(&value);
+                if(runtime->trace!=NULL&&runtime->trace->stop_requested)return execution(EXEC_ERROR);
                 if (!ok) {TraceEvent event=trace_event(TRACE_WHILE_END,statement->span,environment);event.iteration=iteration;emit(runtime,event);return execution(EXEC_OK);}
                 iteration++; {TraceEvent event=trace_event(TRACE_WHILE_ITERATION,statement->span,environment);event.name="enquanto";event.name_length=8U;event.iteration=iteration;emit(runtime,event);}
+                if(runtime->trace!=NULL&&runtime->trace->stop_requested)return execution(EXEC_ERROR);
                 {
                     ExecutionResult result = execute_statement(statement->as.while_statement.body, environment, runtime, errors);
-                    if (result.status == EXEC_BREAK) return execution(EXEC_OK);
+                    if (runtime->trace != NULL && runtime->trace->stop_requested)
+                        return execution(EXEC_OK);
+                    if (result.status == EXEC_BREAK) {
+                        TraceEvent event=trace_event(TRACE_WHILE_END,statement->span,environment);
+                        event.iteration=iteration;emit(runtime,event);return execution(EXEC_OK);
+                    }
                     if (result.status == EXEC_CONTINUE) continue;
                     if (result.status != EXEC_OK) return result;
                 }
@@ -616,6 +703,7 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
             current = start.as.integer; final_value = end.as.integer;
             {TraceEvent event=trace_event(TRACE_FOR_START,statement->span,environment);event.name=statement->as.for_statement.iterator_name;event.name_length=statement->as.for_statement.iterator_length;event.before=&start;event.after=&end;emit(runtime,event);}
             value_free(&start); value_free(&end);
+            if(runtime->trace!=NULL&&runtime->trace->stop_requested)return execution(EXEC_ERROR);
             if (current > final_value) {TraceEvent event=trace_event(TRACE_FOR_END,statement->span,environment);emit(runtime,event);return execution(EXEC_OK);}
             loop_environment = environment_new_child(environment);
             if (loop_environment == NULL) return execution(EXEC_ERROR);
@@ -629,12 +717,14 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
             }
             for (;;) {
                 iteration++; {TraceEvent event=trace_event(TRACE_FOR_ITERATION,statement->span,loop_environment);Value iterator=value_integer(current);event.name=statement->as.for_statement.iterator_name;event.name_length=statement->as.for_statement.iterator_length;event.iteration=iteration;event.after=&iterator;emit(runtime,event);}
+                if(runtime->trace!=NULL&&runtime->trace->stop_requested){environment_release_child(loop_environment);return execution(EXEC_ERROR);}
                 ExecutionResult result = execute_statement(statement->as.for_statement.body, loop_environment, runtime, errors);
                 if (result.status == EXEC_BREAK) break;
                 if (result.status != EXEC_OK && result.status != EXEC_CONTINUE) {
                     environment_release_child(loop_environment);
                     return result;
                 }
+                if (runtime->trace != NULL && runtime->trace->stop_requested) break;
                 if (current == final_value) break;
                 current++;
                 value = value_integer(current);
@@ -666,6 +756,7 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
             }
             count = iterable.as.list->count;
             {TraceEvent event=trace_event(TRACE_FOREACH_START,statement->span,environment);event.name=statement->as.for_each_statement.iterator_name;event.name_length=statement->as.for_each_statement.iterator_length;event.after=&iterable;emit(runtime,event);}
+            if(runtime->trace!=NULL&&runtime->trace->stop_requested){value_free(&iterable);return execution(EXEC_ERROR);}
             if (count > 0U) {
                 items = memory_reallocate_array(NULL, count, sizeof(*items));
                 if (items == NULL) { value_free(&iterable); return execution(EXEC_ERROR); }
@@ -699,6 +790,7 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
                 }
                 iteration++;
                 {TraceEvent event=trace_event(TRACE_FOR_ITERATION,statement->span,loop_environment);event.name=statement->as.for_each_statement.iterator_name;event.name_length=statement->as.for_each_statement.iterator_length;event.iteration=iteration;event.after=&items[index];emit(runtime,event);}
+                if(runtime->trace!=NULL&&runtime->trace->stop_requested){size_t cleanup;environment_release_child(loop_environment);for(cleanup=0U;cleanup<count;cleanup++)value_free(&items[cleanup]);memory_free(items);return execution(EXEC_ERROR);}
                 result = execute_statement(statement->as.for_each_statement.body, loop_environment, runtime, errors);
                 if (result.status == EXEC_BREAK) break;
                 if (result.status != EXEC_OK && result.status != EXEC_CONTINUE) {
@@ -706,6 +798,7 @@ static ExecutionResult execute_statement(const Stmt *statement, Environment *env
                     for (cleanup = 0U; cleanup < count; cleanup++) value_free(&items[cleanup]);
                     memory_free(items); return result;
                 }
+                if (runtime->trace != NULL && runtime->trace->stop_requested) break;
             }
             environment_release_child(loop_environment);
             for (index = 0U; index < count; index++) value_free(&items[index]);
@@ -724,6 +817,7 @@ foreach_error:
             if (statement->as.return_statement.value != NULL &&
                 !evaluate(statement->as.return_statement.value, environment, runtime, &result.value, errors))
                 return execution(EXEC_ERROR);
+            result.origin=statement;
             return result;
         }
         case STMT_INDEX_ASSIGNMENT: {
@@ -736,15 +830,16 @@ foreach_error:
             if(list_would_create_cycle(target.as.list,&assigned)){value_free(&target);value_free(&index);value_free(&assigned);(void)fail(errors,statement->span,"Esta alteracao criaria uma lista ciclica.","Listas ciclicas nao sao permitidas nesta versao.");return execution(EXEC_ERROR);}
             if(!list_get(target.as.list,(size_t)index.as.integer,&before)){value_free(&target);value_free(&index);value_free(&assigned);return execution(EXEC_ERROR);}
             if(!list_set(target.as.list,(size_t)index.as.integer,&assigned)){value_free(&before);value_free(&target);value_free(&index);value_free(&assigned);return execution(EXEC_ERROR);}
-            {TraceEvent event=trace_event(TRACE_INDEX_WRITE,statement->span,environment);event.index=index.as.integer;event.before=&before;event.after=&assigned;emit(runtime,event);}value_free(&before);value_free(&target);value_free(&index);value_free(&assigned);return execution(EXEC_OK);
+            {TraceEvent event=trace_event(TRACE_INDEX_WRITE,statement->span,environment);event.index=index.as.integer;event.before=&before;event.after=&assigned;event.expression=statement->as.index_assignment.value;event.statement=statement;emit(runtime,event);}value_free(&before);value_free(&target);value_free(&index);value_free(&assigned);return execution(EXEC_OK);
         }
         case STMT_IMPORT: {
-            LumeModule *imported;Value module_value=value_null();bool replace_native=statement->as.import.path_length==10U&&memcmp(statement->as.import.path,"lume/texto",10U)==0;
+            LumeModule *imported,*existing_module=NULL;Value module_value=value_null();bool replace_native=!statement->as.import.has_alias&&statement->as.import.path_length==10U&&memcmp(statement->as.import.path,"lume/texto",10U)==0;
             if(runtime->registry==NULL){(void)fail(errors,statement->span,"Imports exigem uma execucao associada a um arquivo.","Execute o programa pela CLI ou pelo REPL.");return execution(EXEC_ERROR);}
-            if(environment_has_current(environment,statement->as.import.binding,statement->as.import.binding_length)){if(environment_get(environment,statement->as.import.binding,statement->as.import.binding_length,&module_value,statement->span,errors)&&module_value.type==VALUE_MODULE){value_free(&module_value);return execution(EXEC_OK);}if(!(replace_native&&module_value.type==VALUE_CALLABLE&&module_value.as.callable->type==CALLABLE_NATIVE_TEXT)){value_free(&module_value);(void)environment_validate_definition(environment,statement->as.import.binding,statement->as.import.binding_length,statement->span,errors);return execution(EXEC_ERROR);}value_free(&module_value);}
-            if(!replace_native&&!environment_validate_definition(environment,statement->as.import.binding,statement->as.import.binding_length,statement->span,errors))return execution(EXEC_ERROR);
-            {TraceEvent event=trace_event(TRACE_MODULE_IMPORT,statement->span,environment);event.name=statement->as.import.path;event.name_length=statement->as.import.path_length;emit(runtime,event);}
+            if(environment_has_current(environment,statement->as.import.binding,statement->as.import.binding_length)){if(!environment_get(environment,statement->as.import.binding,statement->as.import.binding_length,&module_value,statement->span,errors))return execution(EXEC_ERROR);if(module_value.type==VALUE_MODULE)existing_module=module_value.as.module;else if(!(replace_native&&module_value.type==VALUE_CALLABLE&&module_value.as.callable->type==CALLABLE_NATIVE_TEXT)){value_free(&module_value);(void)environment_validate_definition(environment,statement->as.import.binding,statement->as.import.binding_length,statement->as.import.binding_span,errors);return execution(EXEC_ERROR);}value_free(&module_value);}
+            if(existing_module==NULL&&!replace_native&&!environment_validate_definition(environment,statement->as.import.binding,statement->as.import.binding_length,statement->as.import.binding_span,errors))return execution(EXEC_ERROR);
+            {TraceEvent event=trace_event(TRACE_MODULE_IMPORT,statement->span,environment);event.name=statement->as.import.path;event.name_length=statement->as.import.path_length;if(statement->as.import.has_alias){event.alias=statement->as.import.binding;event.alias_length=statement->as.import.binding_length;}emit(runtime,event);}
             if(!module_registry_import(runtime->registry,runtime->module==NULL?"./principal.lume":runtime->module->path,statement,&imported,errors))return execution(EXEC_ERROR);
+            if(existing_module!=NULL){if(existing_module==imported)return execution(EXEC_OK);(void)environment_validate_definition(environment,statement->as.import.binding,statement->as.import.binding_length,statement->as.import.binding_span,errors);return execution(EXEC_ERROR);}
             {TraceEvent event=trace_event(TRACE_MODULE_LOADED,statement->span,environment);event.name=imported->name;event.name_length=strlen(imported->name);emit(runtime,event);}
             module_value=value_module(imported);if(replace_native){if(!environment_set_local_internal(environment,statement->as.import.binding,statement->as.import.binding_length,&module_value))return execution(EXEC_ERROR);}else if(!environment_define(environment,statement->as.import.binding,statement->as.import.binding_length,&module_value,false,statement->span,errors))return execution(EXEC_ERROR);return execution(EXEC_OK);
         }
@@ -772,7 +867,11 @@ static ExecutionResult execute_statements(const StmtArray *statements, Environme
                 value_free(&function_value); return execution(EXEC_ERROR);
             }
             value_free(&function_value);
-            {TraceEvent event=trace_event(TRACE_DECLARE_FUNCTION,statement->span,environment);event.name=statement->as.function.name;event.name_length=statement->as.function.name_length;emit(runtime,event);}
+            if (runtime->published_user_callable != NULL &&
+                    (runtime->tracked_source==NULL||
+                     statement->span.source==runtime->tracked_source))
+                *runtime->published_user_callable = true;
+            {TraceEvent event=trace_event(TRACE_DECLARE_FUNCTION,statement->span,environment);event.name=statement->as.function.name;event.name_length=statement->as.function.name_length;event.statement=statement;emit(runtime,event);}
         }
     }
     for (index = 0U; index < statements->count; index++) {
@@ -802,10 +901,19 @@ bool interpreter_execute_program_with_trace(const Program *program, Environment 
 }
 bool interpreter_execute_program_with_modules(const Program *program,Environment *environment,
     RuntimeIO *io,RuntimeTrace *trace,ModuleRegistry *registry,LumeModule *module,ErrorList *errors) {
+    return interpreter_execute_program_with_modules_tracking(program,environment,io,trace,
+        registry,module,NULL,NULL,errors);
+}
+bool interpreter_execute_program_with_modules_tracking(const Program *program,
+    Environment *environment,RuntimeIO *io,RuntimeTrace *trace,
+    ModuleRegistry *registry,LumeModule *module,const Source *tracked_source,
+    bool *published_user_callable,ErrorList *errors) {
     Runtime runtime; ExecutionResult result;
+    if (published_user_callable != NULL) *published_user_callable=false;
     if (program == NULL || environment == NULL || errors == NULL || errors->count != 0U)
         return false;
     runtime.io = io; runtime.trace = trace; runtime.call_depth=0U;runtime.registry=registry;runtime.module=module;
+    runtime.tracked_source=tracked_source;runtime.published_user_callable=published_user_callable;
     if (io == NULL || io->input == NULL || io->output == NULL) return false;
     if (!install_native(environment, CALLABLE_NATIVE_WRITE, "escreva", 7U, 1U, errors) ||
         !install_native(environment, CALLABLE_NATIVE_READ, "leia", 4U, 0U, errors) ||
@@ -818,7 +926,7 @@ bool interpreter_execute_program_with_modules(const Program *program,Environment
         !install_native(environment, CALLABLE_NATIVE_REMOVE, "remova", 6U, 2U, errors)) return false;
     {TraceEvent event=trace_event(TRACE_PROGRAM_START,(SourceSpan){{0U,1U,1U},{0U,1U,1U},NULL},environment);emit(&runtime,event);}
     result = execute_statements(&program->statements, environment, &runtime, errors);
-    if (trace == NULL || !trace->stop_requested) {TraceEvent event=trace_event(TRACE_PROGRAM_END,(SourceSpan){{0U,1U,1U},{0U,1U,1U},NULL},environment);emit(&runtime,event);}
+    if (result.status == EXEC_OK && (trace == NULL || !trace->stop_requested)) {TraceEvent event=trace_event(TRACE_PROGRAM_END,(SourceSpan){{0U,1U,1U},{0U,1U,1U},NULL},environment);emit(&runtime,event);}
     value_free(&result.value);
     return result.status == EXEC_OK;
 }

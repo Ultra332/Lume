@@ -4,7 +4,7 @@ void error_list_init(ErrorList *list) {
     if (list != NULL) { list->data = NULL; list->count = 0U; list->capacity = 0U; }
 }
 bool error_list_add(ErrorList *list, LumeError error) {
-    LumeError *grown; size_t capacity; char *subject_copy = NULL;
+    LumeError *grown; size_t capacity; char *subject_copy = NULL,*replacement_copy=NULL;
     if (list == NULL) return false;
     if (list->count == list->capacity) {
         if (list->count == SIZE_MAX) return false;
@@ -22,6 +22,10 @@ bool error_list_add(ErrorList *list, LumeError error) {
     }
     if (subject_copy == NULL) { error.subject = NULL; error.subject_length = 0U; }
     else { error.subject = subject_copy; }
+    if (error.replacement != NULL && error.replacement_length > 0U)
+        replacement_copy=memory_copy_string(error.replacement,error.replacement_length);
+    if (replacement_copy == NULL) { error.replacement=NULL;error.replacement_length=0U; }
+    else error.replacement=replacement_copy;
     list->data[list->count++] = error;
     return true;
 }
@@ -31,7 +35,9 @@ void error_list_free(ErrorList *list) {
     for (index = 0U; index < list->count; index++) {
         /* A copia foi feita em error_list_add; o const descreve o uso, nao a posse. */
         memory_free((char *)list->data[index].subject);
+        memory_free((char *)list->data[index].replacement);
         list->data[index].subject = NULL; list->data[index].subject_length = 0U;
+        list->data[index].replacement=NULL;list->data[index].replacement_length=0U;
     }
     memory_free(list->data); error_list_init(list);
 }

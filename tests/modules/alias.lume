@@ -1,0 +1,14 @@
+importe "lume/texto" como texto_lib
+importe "lume/matematica" como mat
+importe "contador" como contador_a
+importe "contador" como contador_b
+
+variavel numero = texto(42)
+variavel partes = texto_lib.separe("Lume,Python,Lua", ",")
+
+escreva(numero)
+escreva(partes[0])
+escreva(partes[1])
+escreva(partes[2])
+escreva(mat.raiz(81))
+escreva(contador_a.proximo())
