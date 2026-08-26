@@ -2,6 +2,39 @@
 
 Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.4.0] — Aprender Fazendo
+
+### Educação
+
+- adicionada uma trilha oficial offline, curta e progressiva, do primeiro programa até listas;
+- cada lição possui objetivo, explicação, exemplo, desafio, dica e conexão com os modos educacionais;
+- documentação passou a oferecer percursos explícitos e separados para alunos e professores.
+
+### Documentação
+
+- o README tornou-se uma porta de entrada curta, com instalação Windows pelo instalador e rotas por público;
+- capítulos de aluno adotam uma estrutura consistente de exemplo, explicação, prática, dica e próximo passo;
+- professores recebem proposta pedagógica, plano de aula, atividades e orientação sobre os modos educacionais;
+- referência da linguagem, biblioteca padrão e documentação de desenvolvimento ficam separadas do primeiro contato;
+- exemplos introdutórios e intermediários foram organizados por dificuldade, preservando os projetos oficiais.
+
+### CLI
+
+- adicionado `lume aprender`, com listagem, abertura, progressão, desafios e dicas;
+- lições são validadas e carregadas individualmente de arquivos externos, sem rede, conta ou telemetria;
+- conteúdo ausente ou corrompido produz erro claro sem afetar a execução normal da linguagem.
+
+### Projeto
+
+- documentos comunitários reconhecidos pelo GitHub passaram para `.github`;
+- conteúdos técnicos e normativos passaram a ter uma área própria em `docs`;
+- pacotes Windows incluem a pasta de lições necessária para o aprendizado offline.
+
+### Estabilidade
+
+- sintaxe, semântica, runtime, módulos e programas da v0.3.0 permanecem compatíveis;
+- a 19ª suíte, `test_learning`, cobre a trilha, a CLI, falhas de conteúdo e exemplos documentados.
+
 ## [0.3.0] — 2026-08-24
 
 Versão focada em tornar a execução e os diagnósticos mais compreensíveis sem

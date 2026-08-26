@@ -1,0 +1,25 @@
+id: 03
+titulo: Entrada de dados
+
+## Objetivo
+Receber uma resposta digitada pela pessoa que executa o programa.
+
+## Explicação
+`leia` mostra um convite e espera uma linha. O resultado é texto. Use `inteiro` quando precisar transformar esse texto em número inteiro.
+
+## Exemplo
+```lume
+variavel nome = leia("Qual é o seu nome? ")
+escreva("Olá, " + nome + "!")
+```
+
+## Desafio
+Peça a idade da pessoa, converta com `inteiro` e mostre a idade no terminal.
+
+## Dica
+A conversão fica assim: `inteiro(leia("Sua idade: "))`.
+
+## Veja a execução
+Depois de testar normalmente, execute `lume --explicar entrada.lume` e forneça a mesma resposta.
+
+Próxima lição: `lume aprender proxima 03`.

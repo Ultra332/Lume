@@ -5,7 +5,7 @@ labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: Não publique vulnerabilidades ou dados sensíveis; consulte SECURITY.md.
+      value: Não publique vulnerabilidades ou dados sensíveis; consulte a política de segurança reconhecida pelo GitHub neste repositório.
   - type: input
     id: version
     attributes:
@@ -30,7 +30,12 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: Resultado esperado e observado
+      label: Resultado esperado
     validations:
       required: true
-
+  - type: textarea
+    id: observed
+    attributes:
+      label: Resultado observado
+    validations:
+      required: true

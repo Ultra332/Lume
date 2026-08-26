@@ -1,0 +1,25 @@
+id: 01
+titulo: Seu primeiro programa
+
+## Objetivo
+Criar um arquivo Lume e mostrar uma mensagem no terminal.
+
+## Explicação
+Um programa é uma sequência de instruções. `escreva` mostra entre parênteses o texto que você colocou entre aspas.
+
+## Exemplo
+```lume
+escreva("Olá, mundo!")
+```
+Salve como `ola.lume` e execute `lume ola.lume`.
+
+## Desafio
+Troque a mensagem pelo seu nome e por algo que você gostaria de aprender.
+
+## Dica
+Mantenha as aspas e os dois parênteses. Eles fazem parte da instrução.
+
+## Veja a execução
+Execute `lume --explicar ola.lume` para observar a chamada de `escreva`.
+
+Próxima lição: `lume aprender proxima 01`.

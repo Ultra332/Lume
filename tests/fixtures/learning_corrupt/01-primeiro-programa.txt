@@ -1,0 +1,4 @@
+id: 01
+titulo: Seu primeiro programa
+
+Este arquivo é intencionalmente incompleto para testar a validação de conteúdo.
