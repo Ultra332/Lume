@@ -1,4 +1,4 @@
-Lume 0.3.0 - Windows x64
+Lume 0.4.0 - Windows x64
 ================================
 
 Este é o pacote portátil da linguagem de programação educacional Lume.
@@ -14,6 +14,12 @@ Uso rápido
 Para executar um programa:
 
    .\lume.exe programa.lume
+
+Para abrir a trilha de aprendizado offline:
+
+   .\lume.exe aprender
+
+Mantenha a pasta `conteudo` ao lado de `lume.exe`; ela contém as lições.
 
 O pacote portátil não altera o PATH. Para usar apenas "lume" em qualquer
 diretório, adicione manualmente a pasta extraída ao PATH do usuário ou use o

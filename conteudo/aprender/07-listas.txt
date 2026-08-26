@@ -1,0 +1,27 @@
+id: 07
+titulo: Listas
+
+## Objetivo
+Guardar vários valores juntos e percorrê-los.
+
+## Explicação
+Uma lista usa colchetes. `para ... em` visita cada elemento, um por vez.
+
+## Exemplo
+```lume
+variavel frutas = ["maçã", "banana", "uva"]
+para fruta em frutas {
+    escreva(fruta)
+}
+```
+
+## Desafio
+Crie uma lista com quatro notas, percorra os valores e calcule a soma.
+
+## Dica
+Comece com `variavel soma = 0` e atualize `soma` dentro do laço.
+
+## Veja a execução
+Use `lume --explicar listas.lume` para acompanhar a criação, as leituras e cada iteração.
+
+Você concluiu a trilha inicial. Continue em `docs/aluno/projetos.md`.

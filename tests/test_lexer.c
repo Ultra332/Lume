@@ -105,7 +105,7 @@ static void test_bom_and_file(void) {
     Source source; TokenArray tokens; ErrorList errors; bool ok;
     expect_types("\xEF\xBB\xBFvariavel", bom, 2U);
     source_init(&source); token_array_init(&tokens); error_list_init(&errors);
-    ok = source_load_file(&source, "exemplos/ola.lume");
+    ok = source_load_file(&source, "exemplos/iniciante/ola-mundo.lume");
     CHECK(ok);
     if (ok) { ok = lexer_scan(&source, &tokens, &errors); CHECK(ok); CHECK(tokens.count > 1U); }
     error_list_free(&errors); token_array_free(&tokens); source_free(&source);

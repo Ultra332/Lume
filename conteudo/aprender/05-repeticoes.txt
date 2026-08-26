@@ -1,0 +1,26 @@
+id: 05
+titulo: Repetições
+
+## Objetivo
+Executar uma instrução várias vezes sem copiá-la.
+
+## Explicação
+O `para` percorre um intervalo. A variável `numero` recebe cada valor do início até o fim.
+
+## Exemplo
+```lume
+para numero de 1 ate 5 {
+    escreva(numero)
+}
+```
+
+## Desafio
+Mostre a tabuada do 5, de `5 * 1` até `5 * 10`.
+
+## Dica
+Use o valor do iterador dentro da multiplicação: `5 * numero`.
+
+## Veja a execução
+Use `lume --passo tabuada.lume` para acompanhar uma iteração de cada vez. Digite `c` quando quiser continuar sem pausas.
+
+Próxima lição: `lume aprender proxima 05`.

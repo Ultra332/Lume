@@ -1,37 +1,44 @@
 # Documentação da Lume
 
-Escolha o caminho que corresponde ao que você deseja fazer.
-
-## Quero instalar e usar
-
-1. [Instalação no Windows](instalacao-windows.md)
-2. [Guia de uso](guia-de-uso.md)
-3. [Começando com a linguagem](comecando.md)
-4. [Projetos e comandos da CLI](projetos.md)
-5. [Biblioteca padrão](biblioteca-padrao.md)
-6. [Jogos no terminal](jogos-no-terminal.md)
+Escolha o que você quer fazer. Não é necessário ler tudo em ordem.
 
 ## Quero aprender programação
 
-- [Começando](comecando.md)
-- [Algoritmos](algoritmos.md)
-- [Soluções de referência](solucoes.md)
-- [Modos educacionais](modos-educacionais.md)
-- [Tutorial da Cobrinha](jogos-no-terminal.md)
-- [Depois da Lume](depois-da-lume.md)
+Comece em [Primeiros passos](aluno/primeiros-passos.md) e avance por:
 
-## Quero ensinar
+1. [Variáveis](aluno/variaveis.md)
+2. [Entrada e saída](aluno/entrada-e-saida.md)
+3. [Condições](aluno/condicoes.md)
+4. [Repetições](aluno/repeticoes.md)
+5. [Funções](aluno/funcoes.md)
+6. [Listas](aluno/listas.md)
+7. [Módulos](aluno/modulos.md)
+8. [Pequenos projetos](aluno/projetos.md)
 
-- [Lume para professores](para-professores.md)
-- [Modos educacionais](modos-educacionais.md)
-- exemplos prontos nas pastas `exemplos/basico` e `exemplos/algoritmos`
+Quando algo der errado, consulte [Erros comuns](aluno/erros-comuns.md). A mesma trilha inicial está disponível offline com `lume aprender`.
+
+## Sou professor
+
+- [Como começar com a Lume em aula](professor/comecando.md)
+- [Proposta pedagógica](professor/proposta-pedagogica.md)
+- [Plano de aula](professor/plano-de-aula.md)
+- [Banco de atividades](professor/atividades.md)
+- [Usando os modos educacionais](professor/usando-modos-educacionais.md)
+
+## Já conheço programação
+
+- [Referência da linguagem](referencia/linguagem.md)
+- [Biblioteca padrão](referencia/biblioteca-padrao.md)
+- [Comandos da CLI](referencia/cli.md)
+- [Projetos e módulos](referencia/projetos-e-modulos.md)
+- [Modos educacionais](referencia/modos-educacionais.md)
+- [Instalação no Windows](referencia/instalacao-windows.md)
 
 ## Quero contribuir
 
-- [Guia de desenvolvimento](desenvolvimento.md)
-- [Arquitetura](../ARCHITECTURE.md)
-- [Contribuindo](../CONTRIBUTING.md)
-- [Testes](../tests/README.md)
-- [Processo de release](release.md)
-
-A especificação normativa da linguagem está em [LANGUAGE.md](../LANGUAGE.md).
+- [Compilando do código-fonte](desenvolvimento/compilando.md)
+- [Arquitetura](desenvolvimento/arquitetura.md)
+- [Testes](desenvolvimento/testes.md)
+- [Roadmap](desenvolvimento/roadmap.md)
+- [Processo de release](desenvolvimento/release.md)
+- [Guia de contribuição](../.github/CONTRIBUTING.md)

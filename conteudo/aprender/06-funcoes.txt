@@ -1,0 +1,28 @@
+id: 06
+titulo: Funções
+
+## Objetivo
+Dar um nome a uma tarefa que pode ser reutilizada.
+
+## Explicação
+Uma função recebe informações por parâmetros e pode devolver um resultado com `retorne`.
+
+## Exemplo
+```lume
+funcao dobro(numero) {
+    retorne numero * 2
+}
+
+escreva(dobro(6))
+```
+
+## Desafio
+Crie uma função `somar(a, b)` e mostre o resultado de `somar(8, 4)`.
+
+## Dica
+O corpo deve usar `retorne a + b`.
+
+## Veja a execução
+Use `lume --explicar funcoes.lume` para observar argumento, parâmetro e retorno.
+
+Próxima lição: `lume aprender proxima 06`.

@@ -1,0 +1,27 @@
+id: 02
+titulo: Variáveis
+
+## Objetivo
+Guardar uma informação com um nome e usá-la depois.
+
+## Explicação
+Uma variável é como uma etiqueta para um valor. Ela pode receber outro valor ao longo do programa.
+
+## Exemplo
+```lume
+variavel nome = "Maria"
+variavel pontos = 10
+escreva(nome)
+escreva(pontos)
+```
+
+## Desafio
+Crie variáveis para seu nome e sua idade. Mostre as duas no terminal.
+
+## Dica
+Use aspas para texto, mas não para números.
+
+## Veja a execução
+Salve como `variaveis.lume` e use `lume --explicar variaveis.lume` para ver quando cada variável é criada e lida.
+
+Próxima lição: `lume aprender proxima 02`.

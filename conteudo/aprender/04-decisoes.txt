@@ -1,0 +1,29 @@
+id: 04
+titulo: Decisões com se
+
+## Objetivo
+Fazer o programa escolher entre dois caminhos.
+
+## Explicação
+`se` executa um bloco quando a condição é verdadeira. `senao` oferece um caminho alternativo.
+
+## Exemplo
+```lume
+variavel idade = 18
+se idade >= 18 {
+    escreva("Maior de idade")
+} senao {
+    escreva("Menor de idade")
+}
+```
+
+## Desafio
+Peça uma idade e mostre se a pessoa é maior ou menor de idade. Teste 17, 18 e 19.
+
+## Dica
+O operador `>=` significa “maior ou igual”. O caso 18 precisa entrar no primeiro bloco.
+
+## Veja a execução
+Use `lume --explicar idade.lume` para ver o resultado da comparação e o bloco escolhido.
+
+Próxima lição: `lume aprender proxima 04`.

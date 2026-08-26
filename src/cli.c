@@ -7,6 +7,7 @@
 #include "diagnostic.h"
 #include "education.h"
 #include "lexer.h"
+#include "learn.h"
 #include "memory.h"
 #include "repl.h"
 #include "session.h"
@@ -14,7 +15,7 @@
 #include "project.h"
 #include "dependency.h"
 static void warn_stale_lock(const DependencyGraph *graph,RuntimeIO io){bool exists=false;if(!dependency_lock_current(graph,&exists)&&exists)fputs("Aviso: lume.lock esta desatualizado. Execute 'lume resolver'.\n",io.output);}
-static void help(FILE *out) { fputs("Lume - linguagem de programacao educacional\n\nUso:\n\n  lume\n      Executa o projeto atual se houver lume.projeto.\n      Caso contrario, abre o REPL.\n\n  lume arquivo.lume\n      Executa um script.\n\n  lume novo <nome>\n      Cria um projeto.\n\n  lume executar [caminho]\n      Executa projeto ou arquivo.\n\n  lume verificar [projeto]\n      Verifica sem executar.\n\n  lume resolver [projeto]\n      Resolve dependencias e atualiza lume.lock.\n\n  lume testar [projeto]\n      Executa os testes do projeto.\n\n  lume --analisar arquivo.lume\n      Analisa um script sem executar.\n\n  lume --explicar arquivo.lume\n      Executa explicando.\n\n  lume --passo arquivo.lume\n      Executa passo a passo.\n\n  lume --tokens arquivo.lume\n      Mostra os tokens.\n\n  lume --expr \"expressao\"\n      Avalia uma expressao.\n\n  lume --versao\n      Mostra a versao.\n\n  lume --ajuda\n      Mostra esta ajuda.\n", out); }
+static void help(FILE *out) { fputs("Lume - linguagem de programacao educacional\n\nUso:\n\n  lume\n      Executa o projeto atual se houver lume.projeto.\n      Caso contrario, abre o REPL.\n\n  lume arquivo.lume\n      Executa um script.\n\n  lume aprender [comando]\n      Abre a trilha de aprendizado offline.\n\n  lume novo <nome>\n      Cria um projeto.\n\n  lume executar [caminho]\n      Executa projeto ou arquivo.\n\n  lume verificar [projeto]\n      Verifica sem executar.\n\n  lume resolver [projeto]\n      Resolve dependencias e atualiza lume.lock.\n\n  lume testar [projeto]\n      Executa os testes do projeto.\n\n  lume --analisar arquivo.lume\n      Analisa um script sem executar.\n\n  lume --explicar arquivo.lume\n      Executa explicando.\n\n  lume --passo arquivo.lume\n      Executa passo a passo.\n\n  lume --tokens arquivo.lume\n      Mostra os tokens.\n\n  lume --expr \"expressao\"\n      Avalia uma expressao.\n\n  lume --versao\n      Mostra a versao.\n\n  lume --ajuda\n      Mostra esta ajuda.\n", out); }
 static int run_text(const char *name, const char *text, size_t length, RuntimeIO io, bool expression) {
     LumeSession session; ErrorList errors; Source *source = NULL; bool ok; session_init(&session, io); error_list_init(&errors);
     ok = session_execute(&session, name, text, length, expression, &source, &errors);
@@ -46,6 +47,7 @@ int cli_run(int argc, char **argv, RuntimeIO io) {
     if (argc==1) return current_project_exists()?run_project(".",io):repl_run(io);
     if (argc==2 && (strcmp(argv[1],"--ajuda")==0 || strcmp(argv[1],"--help")==0)) { help(io.output); return 0; }
     if (argc==2 && (strcmp(argv[1],"--versao")==0 || strcmp(argv[1],"--version")==0)) { fprintf(io.output,"Lume %s\n",LUME_VERSION_STRING); return 0; }
+    if (argc>=2 && strcmp(argv[1],"aprender")==0) return learn_cli(argc-2,argv+2,io,argv[0]);
     if (argc==3 && strcmp(argv[1],"--run")==0) return run_file(argv[2],io);
     if (argc==3 && strcmp(argv[1],"--tokens")==0) return tokens(argv[2],io);
     if (argc==3 && strcmp(argv[1],"--expr")==0) return run_text("<expressao>",argv[2],strlen(argv[2]),io,true);

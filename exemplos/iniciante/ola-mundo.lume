@@ -1,0 +1,2 @@
+// Execute com: lume exemplos/iniciante/ola-mundo.lume
+escreva("Olá, mundo!")

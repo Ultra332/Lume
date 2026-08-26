@@ -1,0 +1,3 @@
+variavel primeiro = 12
+variavel segundo = 8
+escreva(primeiro + segundo)

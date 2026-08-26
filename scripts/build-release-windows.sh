@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-VERSION="0.3.0"
+VERSION="0.4.0"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$SCRIPT_DIR/.."
 DIST="dist"
@@ -40,6 +40,7 @@ fi
 cp lume.exe "$STAGE/lume.exe"
 cp LICENSE "$STAGE/LICENSE"
 cp packaging/README-Windows.txt "$STAGE/README.txt"
+cp -R conteudo "$STAGE/conteudo"
 
 if command -v objdump >/dev/null 2>&1; then
     objdump -p "$STAGE/lume.exe" | sed -n 's/^[[:space:]]*DLL Name: /DLL: /p' > "$BUILD/windows-runtime-dependencies.txt"
@@ -54,7 +55,7 @@ else
 fi
 
 if command -v bsdtar >/dev/null 2>&1; then
-    bsdtar -C "$STAGE" -a -cf "$DIST/$ZIP_NAME" lume.exe README.txt LICENSE
+    bsdtar -C "$STAGE" -a -cf "$DIST/$ZIP_NAME" lume.exe README.txt LICENSE conteudo
 else
     echo "Erro: bsdtar nao foi encontrado para criar o ZIP portatil." >&2
     exit 1

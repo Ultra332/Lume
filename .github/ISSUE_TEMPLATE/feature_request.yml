@@ -13,11 +13,12 @@ body:
   - type: textarea
     id: proposal
     attributes:
-      label: Proposta e exemplo
+      label: Exemplo de uso
+      description: Mostre como a ideia apareceria para quem usa a Lume.
     validations:
       required: true
   - type: textarea
-    id: alternatives
+    id: learning
     attributes:
-      label: Alternativas e impacto educacional
-
+      label: Por que isso ajuda a aprender?
+      description: Explique o benefício educacional e alternativas que você considerou.
