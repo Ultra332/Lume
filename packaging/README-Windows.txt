@@ -1,4 +1,4 @@
-Lume 0.4.0 - Windows x64
+Lume 0.5.0 - Windows x64
 ================================
 
 Este é o pacote portátil da linguagem de programação educacional Lume.
@@ -18,8 +18,10 @@ Para executar um programa:
 Para abrir a trilha de aprendizado offline:
 
    .\lume.exe aprender
+   .\lume.exe aprender conceitos
+   .\lume.exe aprender transicao python
 
-Mantenha a pasta `conteudo` ao lado de `lume.exe`; ela contém as lições.
+Mantenha a pasta `conteudo` ao lado de `lume.exe`; ela contém lições e materiais educacionais offline.
 
 O pacote portátil não altera o PATH. Para usar apenas "lume" em qualquer
 diretório, adicione manualmente a pasta extraída ao PATH do usuário ou use o

@@ -17,6 +17,8 @@ Comece em [Primeiros passos](aluno/primeiros-passos.md) e avance por:
 
 Quando algo der errado, consulte [Erros comuns](aluno/erros-comuns.md). A mesma trilha inicial está disponível offline com `lume aprender`.
 
+Depois da trilha inicial, [Além da Lume](aluno/alem-da-lume.md) conecta conceitos fundamentais à primeira transição oficial para Python.
+
 ## Sou professor
 
 - [Como começar com a Lume em aula](professor/comecando.md)
@@ -24,6 +26,7 @@ Quando algo der errado, consulte [Erros comuns](aluno/erros-comuns.md). A mesma 
 - [Plano de aula](professor/plano-de-aula.md)
 - [Banco de atividades](professor/atividades.md)
 - [Usando os modos educacionais](professor/usando-modos-educacionais.md)
+- [Transição da Lume para Python](professor/transicao-para-python.md)
 
 ## Já conheço programação
 

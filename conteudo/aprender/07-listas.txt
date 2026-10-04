@@ -24,4 +24,6 @@ Comece com `variavel soma = 0` e atualize `soma` dentro do laço.
 ## Veja a execução
 Use `lume --explicar listas.lume` para acompanhar a criação, as leituras e cada iteração.
 
+Consulte também: `lume aprender conceito lista`.
+
 Você concluiu a trilha inicial. Continue em `docs/aluno/projetos.md`.

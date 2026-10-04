@@ -24,4 +24,6 @@ Use aspas para texto, mas não para números.
 ## Veja a execução
 Salve como `variaveis.lume` e use `lume --explicar variaveis.lume` para ver quando cada variável é criada e lida.
 
+Consulte também: `lume aprender conceito variavel`.
+
 Próxima lição: `lume aprender proxima 02`.

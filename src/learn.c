@@ -10,6 +10,7 @@
 #endif
 
 #include "memory.h"
+#include "learning_catalog.h"
 #include "source.h"
 
 typedef struct {
@@ -149,6 +150,61 @@ static void list_lessons(FILE *output) {
     }
 }
 
+static void list_concepts(FILE *output) {
+    size_t index;
+    fputs("Conceitos de programação\n\n", output);
+    for (index = 0U; index < learning_concept_count(); index++) {
+        const LearningConcept *concept = learning_concept_at(index);
+        fprintf(output, "%2zu. %s\n", index + 1U, concept->title);
+    }
+    fputs("\nConsulte um conceito com:\n  lume aprender conceito variavel\n", output);
+}
+
+static int show_concept(const char *slug, FILE *output) {
+    const LearningConcept *concept = learning_concept_find(slug);
+    if (concept == NULL) {
+        fprintf(output, "O conceito '%s' não foi encontrado. Use 'lume aprender conceitos'.\n",
+                slug == NULL ? "" : slug);
+        return 1;
+    }
+    fprintf(output,
+        "%s\n\n%s\n\nExemplo em Lume:\n\n%s\n\nNeste exemplo:\n%s\n\nOnde costuma ser utilizado:\n%s\n\nConceitos relacionados:\n%s\n\nLição relacionada:\n%s\n",
+        concept->title, concept->definition, concept->example, concept->explanation,
+        concept->uses, concept->related, concept->lesson);
+    return 0;
+}
+
+static void list_transition_languages(FILE *output) {
+    size_t index;
+    fputs("Transição para outra linguagem\n\nLinguagens disponíveis:\n", output);
+    for (index = 0U; index < transition_language_count(); index++) {
+        const TransitionLanguage *language = transition_language_at(index);
+        fprintf(output, "%zu. %s\n", index + 1U, language->name);
+    }
+    fputs("\nAbra a ponte inicial com:\n  lume aprender transicao python\n", output);
+}
+
+static int show_transition(const char *slug, FILE *output) {
+    const TransitionLanguage *language = transition_language_find(slug);
+    size_t index;
+    if (language == NULL) {
+        fprintf(output, "A linguagem '%s' não está disponível nesta versão.\n",
+                slug == NULL ? "" : slug);
+        return 1;
+    }
+    fprintf(output, "Transição: Lume → %s\n\n%s\n", language->name,
+            language->introduction);
+    for (index = 0U; index < language->topic_count; index++) {
+        const TransitionTopic *topic = &language->topics[index];
+        fprintf(output,
+            "\n%d. %s\n\nLume:\n%s\n\n%s:\n%s\n\nO que mudou:\n%s\n\nO que continuou igual:\n%s\n",
+            (int)(index + 1U), topic->title, topic->lume, language->name,
+            topic->destination, topic->changed, topic->preserved);
+    }
+    fputs("\nPratique: escolha um exemplo pequeno em Lume, identifique seus conceitos e reescreva-o em Python antes de comparar a resposta.\n", output);
+    return 0;
+}
+
 static int show_lesson(const char *directory, const LessonInfo *lesson, FILE *output) {
     Source source;
     const char *content;
@@ -198,6 +254,18 @@ int learn_cli_from_directory(int argc, char **argv, RuntimeIO io,
                              const char *content_directory) {
     const LessonInfo *lesson;
     char choice[32];
+    if (argc == 1 && (strcmp(argv[0], "conceitos") == 0 || strcmp(argv[0], "conceito") == 0)) {
+        list_concepts(io.output);
+        return 0;
+    }
+    if (argc == 2 && strcmp(argv[0], "conceito") == 0)
+        return show_concept(argv[1], io.output);
+    if (argc == 1 && strcmp(argv[0], "transicao") == 0) {
+        list_transition_languages(io.output);
+        return 0;
+    }
+    if (argc == 2 && strcmp(argv[0], "transicao") == 0)
+        return show_transition(argv[1], io.output);
     if (content_directory == NULL) {
         fputs("Os conteudos de aprendizado nao foram encontrados. Reinstale a Lume ou mantenha a pasta conteudo ao lado do executavel.\n", io.output);
         return 1;
@@ -247,7 +315,7 @@ int learn_cli_from_directory(int argc, char **argv, RuntimeIO io,
         return lesson == NULL ? missing_lesson(argv[1], io.output)
                               : show_section(content_directory, lesson, "## Dica", io.output);
     }
-    fputs("Uso: lume aprender [listar | ID | abrir ID | proxima ID | desafio ID | dica ID]\n", io.output);
+    fputs("Uso: lume aprender [listar | conceito [nome] | conceitos | transicao [linguagem] | ID | abrir ID | proxima ID | desafio ID | dica ID]\n", io.output);
     return 2;
 }
 

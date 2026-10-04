@@ -33,4 +33,6 @@ void diagnostic_render(FILE *stream, const Source *source, const LumeError *erro
         if(error->right_type!=NULL)fprintf(stream,"  Direita: %s\n",error->right_type);
     }
     if (error->suggestion != NULL) fprintf(stream, "\nDica:\n%s\n", error->suggestion);
+    if (error->kind == LUME_ERROR_NAME)
+        fputs("\nPara entender variáveis e escopo:\n  lume aprender conceito variavel\n", stream);
 }

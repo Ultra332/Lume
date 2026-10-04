@@ -1,0 +1,18 @@
+variavel idade = 18
+variavel nomes = ["Ana", "Bia"]
+
+se idade >= 18 {
+    escreva("Maior")
+} senao {
+    escreva("Menor")
+}
+
+para nome em nomes {
+    escreva(nome)
+}
+
+funcao dobro(numero) {
+    retorne numero * 2
+}
+
+escreva(dobro(5))

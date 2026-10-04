@@ -15,6 +15,12 @@ O roadmap registra direções possíveis, não datas ou promessas. Propostas dev
 - distribuição oficial para outras plataformas;
 - amadurecimento de projetos, módulos e biblioteca padrão a partir de uso real.
 
+## Em estudo — Lume no navegador
+
+Uma direção futura é permitir escrever e executar Lume no navegador sem instalação, com editor, saída integrada, exemplos e os modos `--explicar`, `--passo`, `--analisar` e `lume aprender`.
+
+Também podem ser avaliados compartilhamento de código e acesso aos conceitos e transições educacionais. Não há data ou tecnologia definida. Como o interpretador é C11, WebAssembly é uma alternativa a estudar, não uma decisão tomada.
+
 ## Fora do escopo atual
 
 - IDE ou interface gráfica própria;

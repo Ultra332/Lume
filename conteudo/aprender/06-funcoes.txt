@@ -25,4 +25,6 @@ O corpo deve usar `retorne a + b`.
 ## Veja a execução
 Use `lume --explicar funcoes.lume` para observar argumento, parâmetro e retorno.
 
+Consulte também: `lume aprender conceito funcao`.
+
 Próxima lição: `lume aprender proxima 06`.

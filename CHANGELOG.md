@@ -2,6 +2,33 @@
 
 Este projeto segue, de forma prática, o formato do [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.5.0] — Além da Sintaxe
+
+### Aprendizado
+
+- adicionados 19 conceitos fundamentais com definição acessível, exemplo em Lume, contexto de uso, relacionamentos e lição relacionada;
+- lições existentes passaram a indicar consultas conceituais sem duplicar seu conteúdo prático;
+- diagnósticos de nome podem apontar para a consulta sobre variável e escopo.
+
+### Transição
+
+- adicionada a primeira ponte educacional oficial, de Lume para Python, com oito tópicos;
+- cada tópico distingue o que muda na sintaxe e o que permanece conceitualmente igual;
+- adicionado `lume comparar arquivo.lume --com python`, uma representação parcial construída a partir da AST;
+- construções sem equivalência segura são identificadas em vez de receber uma tradução inventada;
+- nenhum recurso procura, instala ou executa Python.
+
+### Documentação
+
+- adicionados materiais de transição para alunos e orientação de atividades para professores;
+- conteúdo auxiliar de conceitos e desafios segue disponível offline no ZIP e instalador;
+- roadmap registra, sem data prometida, o estudo futuro da Lume no navegador.
+
+### Estabilidade
+
+- sintaxe, semântica, runtime e programas da v0.4.0 permanecem compatíveis;
+- a 20ª suíte, `test_v050`, cobre conceitos, UTF-8, transição, comparação pela AST e regressões educacionais.
+
 ## [0.4.0] — Aprender Fazendo
 
 ### Educação

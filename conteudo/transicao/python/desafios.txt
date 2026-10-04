@@ -1,0 +1,13 @@
+Desafios de transição — Lume para Python
+
+1. Escreva uma mensagem em Lume. Como a mesma saída aparece em Python?
+2. Crie uma variável de idade e uma condição em Lume. Reescreva em Python.
+3. Percorra uma lista de nomes nas duas linguagens.
+4. Crie uma função com parâmetro e retorno nas duas linguagens.
+
+Primeiro identifique os conceitos. Depois consulte:
+
+  lume aprender transicao python
+  lume comparar arquivo.lume --com python
+
+A comparação é educacional e cobre somente um subconjunto documentado.

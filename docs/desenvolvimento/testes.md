@@ -1,6 +1,6 @@
 # Testes
 
-O `make test` executa 19 suítes independentes.
+O `make test` executa 20 suítes independentes.
 
 `test_lexer.c` é uma suíte unitária C sem framework externo. Ela cobre tokens,
 palavras-chave, funções nativas como identificadores, números, strings, escapes,
@@ -27,6 +27,10 @@ incompatíveis.
 `test_learning.c` cobre catálogo, menu interativo, abertura, próxima lição,
 UTF-8, desafio, dica, conteúdo ausente ou corrompido, integração com a CLI e
 com os modos educacionais, além de executar exemplos centrais da documentação.
+
+`test_v050.c` cobre conceitos, relacionamentos, UTF-8, transição para Python,
+comparação baseada na AST, sintaxe inválida, construções sem equivalência e
+regressões educacionais. A suíte não exige Python nem acesso à rede.
 
 `test_lists.c` cobre literais, índices, aliases, mutação, crescimento, remoção,
 listas aninhadas, formatter, funções, closures, UTF-8, igualdade e ciclos.

@@ -14,6 +14,8 @@ arquivo UTF-8
        `-> Static Analyzer -> diagnósticos e métricas
 
 conteudo/aprender/*.txt -> Learn -> apresentação offline no terminal
+LearningCatalog -> Learn -> conceitos e transições offline
+Program (AST) -> Compare -> representação educacional parcial em Python
 ```
 
 Lexer, parser e interpretador são fronteiras independentes. O parser nunca
@@ -29,7 +31,12 @@ diagnósticos visuais, conversões e tracing educacional.
 - `main`: ponto de entrada mínimo que delega para `cli`.
 - `cli`: argumentos, exit codes e despacho dos comandos.
 - `learn`: catálogo pequeno, descoberta e validação das lições externas e
-  apresentação seletiva por `RuntimeIO`; não inclui nem chama o interpretador.
+  apresentação seletiva por `RuntimeIO`; usa `learning_catalog` para consultas e
+  transições e não inclui nem chama o interpretador.
+- `learning_catalog`: dados conceituais e destinos educacionais independentes da
+  apresentação de terminal; outro destino pode ser adicionado sem alterar o runtime.
+- `compare`: renderer parcial e determinístico da AST para comparação conceitual;
+  não executa Python e recusa equivalências que ainda não são seguras.
 - `repl`: prompts, comandos e acumulação de entrada multilinha.
 - `session`: ambiente persistente e ownership das unidades interativas.
 - `diagnostic`: apresentação terminal de erros estruturados, fonte e caret.

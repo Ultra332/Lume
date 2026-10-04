@@ -23,6 +23,8 @@ Veja a [instalação completa](../referencia/instalacao-windows.md). Para labora
 6. listas;
 7. um projeto pequeno.
 
+Quando a turma estiver pronta para reconhecer os mesmos conceitos em outra sintaxe, consulte [Transição da Lume para Python](transicao-para-python.md).
+
 Os capítulos do [percurso do aluno](../aluno/primeiros-passos.md) seguem essa ordem. A trilha `lume aprender` cobre os sete primeiros tópicos em sessões curtas.
 
 ## Demonstração em sala

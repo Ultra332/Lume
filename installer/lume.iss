@@ -1,5 +1,5 @@
 #define MyAppName "Lume"
-#define MyAppVersion "0.4.0"
+#define MyAppVersion "0.5.0"
 #define MyAppExeName "lume.exe"
 
 [Setup]
@@ -12,7 +12,7 @@ DefaultGroupName=Lume
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=..\dist
-OutputBaseFilename=Lume-0.4.0-Windows-x64-Setup
+OutputBaseFilename=Lume-0.5.0-Windows-x64-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -29,7 +29,7 @@ SetupIconFile=..\assets\lume.ico
 [Files]
 Source: "..\build\windows-package\lume.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\windows-package\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\build\windows-package\conteudo\aprender\*"; DestDir: "{app}\conteudo\aprender"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\build\windows-package\conteudo\*"; DestDir: "{app}\conteudo"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Code]
 const

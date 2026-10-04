@@ -1,6 +1,6 @@
-# Especificação da linguagem Lume 0.4
+# Especificação da linguagem Lume 0.5
 
-A v0.4.0 acrescenta ferramentas de aprendizado, mas não altera a sintaxe nem a semântica dos programas da v0.3.0.
+A v0.5.0 acrescenta conceitos e uma ponte educacional para Python, mas não altera a sintaxe nem a semântica dos programas da v0.4.0.
 
 Este documento define a sintaxe pretendida para o primeiro interpretador. Itens
 marcados como futuros não fazem parte da implementação inicial.

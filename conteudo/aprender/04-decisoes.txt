@@ -26,4 +26,6 @@ O operador `>=` significa “maior ou igual”. O caso 18 precisa entrar no prim
 ## Veja a execução
 Use `lume --explicar idade.lume` para ver o resultado da comparação e o bloco escolhido.
 
+Consulte também: `lume aprender conceito condicao`.
+
 Próxima lição: `lume aprender proxima 04`.

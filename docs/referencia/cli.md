@@ -9,6 +9,12 @@ lume aprender 03                      abre uma lição
 lume aprender proxima 03              abre a próxima lição
 lume aprender desafio 03              mostra somente o desafio
 lume aprender dica 03                 mostra somente a dica
+lume aprender conceitos               lista conceitos fundamentais
+lume aprender conceito funcao         explica um conceito
+lume aprender transicao               lista destinos educacionais
+lume aprender transicao python        abre a ponte Lume → Python
+lume comparar arquivo.lume --com python
+                                       compara um subconjunto pela AST
 ```
 
 As lições são arquivos locais instalados com a Lume. O comando não usa rede, conta, telemetria ou envio de código. Esta versão não corrige desafios automaticamente.

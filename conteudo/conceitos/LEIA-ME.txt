@@ -1,0 +1,9 @@
+Conceitos fundamentais — Lume 0.5.0
+
+O catálogo completo é consultado offline pelo executável:
+
+  lume aprender conceitos
+  lume aprender conceito variavel
+
+As lições ensinam pela prática. Os conceitos servem como consulta curta e
+relacionam definição, exemplo, uso, outros conceitos e a lição correspondente.

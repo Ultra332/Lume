@@ -11,7 +11,7 @@
 
 Lume é uma linguagem de programação em português criada para ajudar quem está começando a entender não apenas como escrever código, mas como ele funciona.
 
-> Estado: **Lume v0.4.0 — Aprender Fazendo**. Versão experimental com uma trilha de aprendizado offline para alunos e percursos próprios para professores e contribuidores.
+> Estado: **Lume v0.5.0 — Além da Sintaxe**. Versão experimental que conecta os conceitos aprendidos na Lume à primeira ponte educacional para Python.
 
 ```lume
 variavel nome = "Maria"
@@ -22,7 +22,7 @@ escreva("Olá, " + nome + "!")
 
 ### Windows
 
-Baixe o instalador `Lume-0.4.0-Windows-x64-Setup.exe` na [página de releases](https://github.com/Ultra332/Lume/releases), instale e abra um terminal novo. Você não precisa instalar GCC, Make ou MSYS2 para usar a linguagem.
+Baixe o instalador `Lume-0.5.0-Windows-x64-Setup.exe` na [página de releases](https://github.com/Ultra332/Lume/releases), instale e abra um terminal novo. Você não precisa instalar GCC, Make ou MSYS2 para usar a linguagem.
 
 ```powershell
 lume --versao
@@ -45,6 +45,17 @@ Veja os requisitos no [guia de compilação](docs/desenvolvimento/compilando.md)
 ## Aprendendo
 
 Comece pelo guia [Primeiros passos](docs/aluno/primeiros-passos.md) ou estude diretamente no terminal com `lume aprender`. A trilha começa pelo primeiro programa e avança por variáveis, entrada, decisões, repetições, funções e listas.
+
+Depois, consulte conceitos e reconheça como eles aparecem em Python:
+
+```text
+lume aprender conceitos
+lume aprender conceito funcao
+lume aprender transicao python
+lume comparar exemplos/v050/ponte-python.lume --com python
+```
+
+Essa comparação é uma ponte educacional baseada na AST da Lume, não um transpiler. Veja [Além da Lume](docs/aluno/alem-da-lume.md).
 
 ## Para professores
 
